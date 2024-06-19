@@ -6,13 +6,14 @@ struct Curve {
     y: Field,
 }
 
-global d: Field = 555;
+// global d: Field = 555;
 impl Curve {
     unconstrained pub fn get_inverses(x1: Field, x2: Field, y1: Field, y2: Field) -> (Field, Field, Field) {
+        let d = 555;
         let lambda = y1 * y2 * x1 * x2;
         let y = (x1 * x2 - y1 * y2) / (lambda * d - 1);
         let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
-        (lambda, x, y)
+        (x, y, lambda)
     }
 
     fn add(self, other: Self) -> Self {
@@ -20,17 +21,18 @@ impl Curve {
         let x2 = other.x;
         let y1 = self.y;
         let y2 = other.y;
-        let (lambda, x, y) = Curve::get_inverses(x1, x2, y1, y2);
-
+        let (x, y, lambda) = Curve::get_inverses(x1, x2, y1, y2);
+        let d = 555;
         let x1x2 = x1 * x2;
         let x1y2 = x1 * y2;
-
-        let x_lhs = x * (lambda * d + 1) - x1y2; // equals y1x2
-        let y_lhs = y * (1 - lambda * d) + x1x2; // equals y1y2
-
+        std::as_witness(x1x2);
+        std::as_witness(x1y2);
+        let x_lhs = x * lambda * d + x - x1y2; // equals y1x2
+        let y_lhs = y * -lambda * d + y + x1x2; // equals y1y2
         let y1x2 = y1 * x2;
         let y1y2 = y1 * y2;
-
+        std::as_witness(y1x2);
+        std::as_witness(y1y2);
         let y1y2x1x2 = y1y2 * x1x2;
         assert(x_lhs == y1x2);
         assert(y_lhs == y1y2);
@@ -42,7 +44,7 @@ impl Curve {
         let x1 = self.x;
         let y1 = self.y;
 
-        let (lambda, x, y) = Curve::get_inverses(x1, x1, y1, y1);
+        let (x, y, lambda) = Curve::get_inverses(x1, x1, y1, y1);
 
         let x1x1 = x1 * x1;
         let x1y1 = x1 * y1;
@@ -51,8 +53,9 @@ impl Curve {
 
         let x_lhs = x + x * lambda * 555; // equals x1y1
         // let x_lhs = -x1y1 + x * (lambda * 555 + 1); // equals x1y1
-        let y_lhs = x1x1 + y - y * lambda * 555; // equals y1y1
+        let y_lhs = x1x1 + y + lambda * y * 555; // equals y1y1
         let y1y1 = y1 * y1;
+        std::as_witness(y1y1);
         let y1y1x1x1 = y1y1 * x1x1;
 
         assert(x_lhs == x1y1 * 2);
