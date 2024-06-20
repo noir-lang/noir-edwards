@@ -19,7 +19,7 @@ impl ScalarField {
         Self { base4_slices: [0; 63] }
     }
     fn from_field(x: Field) -> Self {
-        let bytes: [u8] = x.to_le_radix(4, 63);
+        let bytes: [u8] = x.to_le_radix(16, 63);
         let mut result: Self = ScalarField { base4_slices: [0; 63] };
         for i in 0..63 {
             result.base4_slices[i] = bytes[62 - i];
@@ -28,5 +28,14 @@ impl ScalarField {
     }
     fn get(self, idx: u64) -> u8 {
         self.base4_slices[idx]
+    }
+
+    fn convert(self) -> Field {
+        let mut acc: Field = 0;
+        for i in 0..63 {
+            acc = acc * 16;
+            acc = acc + self.base4_slices[i] as Field;
+        }
+        acc
     }
 }
