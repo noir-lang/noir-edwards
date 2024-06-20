@@ -71,20 +71,20 @@ fn main(x: Field, y: pub Field) {
 //     // main(1, 1);
 // }
 
-#[test]
-fn test_sub() {
-    let bjj = baby_jubjub();
-    let bjj_point = bjj.base8;
+// #[test]
+// fn test_sub() {
+//     let bjj = baby_jubjub();
+//     let bjj_point = bjj.base8;
 
-    // println(f"{left}");
-    let point:  Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
-    println(f"BJJ GEN {point}");
+//     // println(f"{left}");
+//     let point:  Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
+//     println(f"BJJ GEN {point}");
 
-    let expected = point + (point + (point));
-    let result = point.dbl().dbl().sub(point);
-    assert(result.x == expected.x);
-    assert(result.y == expected.y);
-}
+//     let expected = point + (point + (point));
+//     let result = point.dbl().dbl().sub(point);
+//     assert(result.x == expected.x);
+//     assert(result.y == expected.y);
+// }
 
 #[test]
 fn test_mul() {

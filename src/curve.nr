@@ -12,15 +12,13 @@ trait CurveParamsTrait {
     fn gen() -> (Field, Field);
 }
 
+// compiles fine without implementing add
 trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add  {
     fn assert_is_on_curve(self);
     fn is_on_curve(self) -> bool;
     fn zero() -> Self;
     fn one() -> Self;
     fn assert_equal(self, other: Self);
-    // fn add(self, x: Self) -> Self;
-    // fn sub(self, x: Self) -> Self;
-    // fn neg(self) -> Self;
     fn dbl(self) -> Self;
     fn mul(self, x: ScalarField) -> Self;
     fn msm<N> (points: [Self; N], scalars: [ScalarField; N]) -> Self;
@@ -140,17 +138,6 @@ impl<Params> std::default::Default for Curve<Params> where Params: CurveParamsTr
      **/
     fn default() -> Self {
         Curve::zero()
-    }
-}
-
-impl<Params> std::ops::Add for Curve<Params> where Params: CurveParamsTrait {
-    /**
-     * @brief return self + other
-     *
-     * Cost: 7 gates
-     **/
-    fn add(self, other:Self) -> Self {
-        Curve::add_internal(self, other, Params::a(), Params::d())
     }
 }
 
