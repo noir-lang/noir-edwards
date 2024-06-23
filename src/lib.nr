@@ -1,3 +1,7 @@
+mod scalar_field;
+mod test;
+mod bjj;
+
 use dep::std;
 use crate::scalar_field::ScalarField;
 
@@ -292,17 +296,45 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
 // ####################################################################################################################
 // ####################################################################################################################
 impl<Params> Curve<Params> {
+
+    fn dbl_8(self) -> Self where Params: TECurveParameterTrait {
+        let x1 = self.x;
+        let y1 = self.y;
+
+        let (x3, y3, _) = Curve::__add_unconstrained(x1, x1, y1, y1, Params::a(), Params::d());
+
+        let t0 = x1 * x1 * Params::a();
+        let t1 = y1 * y1 + t0;
+        let t2 = x1 * y1;
+        let t3 = x3 * t1 - t2;
+        let t4 = y3 + y3 - t1 * y3 + t0 * 2;
+        assert(t4 == t1);
+        assert(t3 == t2);
+        Self { x: x3, y: y3 }
+    }
+
+    fn dbl_5(self) -> Self where Params: TECurveParameterTrait {
+        let x1 = self.x;
+        let y1 = self.y;
+
+        let (x3, y3, _) = Curve::__add_unconstrained(x1, x1, y1, y1, Params::a(), Params::d());
+
+        let t0 = x1 * x1 * Params::a();
+        std::as_witness(t0);
+        let t1 = y1 * y1 + t0;
+        std::as_witness(t1);
+        let t2 = x1 * y1;
+        std::as_witness(t2);
+        let t3 = x3 * t1 - t2;
+        let t4 = y3 + y3 - t1 * y3 + t0 * 2;
+        assert(t4 == t1);
+        assert(t3 == t2);
+        Self { x: x3, y: y3 }
+    }
     /**
      * @brief add points together, return output + lambda term
      **/
-    unconstrained pub fn __add_unconstrained(
-        x1: Field,
-        x2: Field,
-        y1: Field,
-        y2: Field,
-        a: Field,
-        d: Field
-    ) -> (Field, Field, Field) {
+    unconstrained pub fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
         let lambda = y1 * y2 * x1 * x2;
         let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
         let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
