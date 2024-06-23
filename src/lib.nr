@@ -10,12 +10,23 @@ struct Curve<Params> {
     y: Field,
 }
 
+// ####################################################################################################################
+// ####################################################################################################################
+// ### T R A I T S
+// ####################################################################################################################
+// ####################################################################################################################
+/**
+ * @brief parametrises a Twisted Edwards curve
+ **/
 trait TECurveParameterTrait {
     fn a() -> Field; // twisted edward curve parameter a
     fn d() -> Field; // twisted edward curve parameter d
     fn gen() -> (Field, Field); // generator point x/y coordinates
 }
 
+/**
+ * @brief defines methods that a valid Curve implementation must satisfy
+ **/
 trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg  {
     fn default() -> Self { std::default::Default::default  () }
     fn new(x: Field, y: Field) -> Self;
@@ -37,6 +48,11 @@ trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub
     fn assert_equal(self, other: Self);
 }
 
+// ####################################################################################################################
+// ####################################################################################################################
+// ### C O N S T R A I N E D    F U N C T I O N S
+// ####################################################################################################################
+// ####################################################################################################################
 impl<Params> std::default::Default for Curve<Params> where Params: TECurveParameterTrait {
     /**
      * @brief return point at infinity
@@ -296,41 +312,6 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
 // ####################################################################################################################
 // ####################################################################################################################
 impl<Params> Curve<Params> {
-
-    fn dbl_8(self) -> Self where Params: TECurveParameterTrait {
-        let x1 = self.x;
-        let y1 = self.y;
-
-        let (x3, y3, _) = Curve::__add_unconstrained(x1, x1, y1, y1, Params::a(), Params::d());
-
-        let t0 = x1 * x1 * Params::a();
-        let t1 = y1 * y1 + t0;
-        let t2 = x1 * y1;
-        let t3 = x3 * t1 - t2;
-        let t4 = y3 + y3 - t1 * y3 + t0 * 2;
-        assert(t4 == t1);
-        assert(t3 == t2);
-        Self { x: x3, y: y3 }
-    }
-
-    fn dbl_5(self) -> Self where Params: TECurveParameterTrait {
-        let x1 = self.x;
-        let y1 = self.y;
-
-        let (x3, y3, _) = Curve::__add_unconstrained(x1, x1, y1, y1, Params::a(), Params::d());
-
-        let t0 = x1 * x1 * Params::a();
-        std::as_witness(t0);
-        let t1 = y1 * y1 + t0;
-        std::as_witness(t1);
-        let t2 = x1 * y1;
-        std::as_witness(t2);
-        let t3 = x3 * t1 - t2;
-        let t4 = y3 + y3 - t1 * y3 + t0 * 2;
-        assert(t4 == t1);
-        assert(t3 == t2);
-        Self { x: x3, y: y3 }
-    }
     /**
      * @brief add points together, return output + lambda term
      **/
