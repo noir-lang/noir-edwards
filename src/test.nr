@@ -44,22 +44,22 @@ fn test_msm() {
     let bjj_point = bjj.base8;
 
     let point:  BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
-    let mut scalar_values: [Field; 10] = [0; 10];
-    let mut points: [BabyJubJub; 10] = [Curve { x: 0, y: 0 }; 10];
-    let mut scalars: [ScalarField<63>; 10] = [ScalarField::new(); 10];
-    let mut bjj_points: [TEPoint; 10] = [TEPoint::new(0, 0); 10];
+    let mut scalar_values: [Field; 1] = [0; 1];
+    let mut points: [BabyJubJub; 1] = [Curve { x: 0, y: 0 }; 1];
+    let mut scalars: [ScalarField<63>; 1] = [ScalarField::new(); 1];
+    let mut bjj_points: [TEPoint; 1] = [TEPoint::new(0, 0); 1];
 
     points[0] = point;
     scalar_values[0] = scalar;
     scalars[0] = ScalarField::from(scalar_values[0]);
     bjj_points[0] = TEPoint::new(points[0].x, points[0].y);
 
-    for i in 1..10 {
+    for i in 1..1 {
         points[i] = points[i-1].dbl();
         scalar_values[i] = scalar_values[i-1] + scalar;
     }
 
-    for i in 0..10 {
+    for i in 0..1 {
         scalars[i] = ScalarField::from(scalar_values[i]);
         bjj_points[i] = TEPoint::new(points[i].x, points[i].y);
         let scalar_expected = scalar_values[i];

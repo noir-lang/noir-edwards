@@ -12,7 +12,47 @@
  *          ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
  **/
 struct ScalarField<N> {
-    base4_slices: [u8; N]
+    base4_slices: [u8; N],
+    skew: bool
+}
+
+unconstrained fn get_wnaf_slices<N>(x: Field) -> ([u8; N], bool) {
+
+    let mut result: [u8; N] = [0; N];
+    let mut nibbles = x.to_le_radix(16, N);
+
+    let skew: bool = nibbles[0] & 1 == 0;
+    nibbles[0] += skew as u8;
+    result[N-1] = (nibbles[0] + 15) / 2;
+    for i in 1..N {
+        let mut nibble: u8 = nibbles[i];
+        result[N-1 - i] = (nibble + 15) / 2;
+        if (nibble & 1 == 0) {
+            result[N-1 - i] += 1;
+            result[N - i] -= 8;
+        }
+    }
+    (result, skew)
+}
+
+unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
+    let mut result: Field = 0;
+
+    for i in 0..64 {
+        result *= 16;
+        result += (x[i] as Field) * 2 - 15;
+    }
+    result -= skew as Field;
+    result
+}
+
+#[test]
+fn test_wnaf() {
+
+    let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
+    let (t0, t1) = get_wnaf_slices(result);
+    let expected = from_wnaf_slices(t0, t1);
+    assert(result == expected);
 }
 
 unconstrained fn get_modulus_slices() -> (Field, Field) {
@@ -39,22 +79,24 @@ unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
 impl<N> std::convert::From<Field> for ScalarField<N> {
 
 
+
     /**
      * @brief construct from a field element
      * @details if N >= 64 we perform extra checks to ensure the slice decomposition represents the same integral value as the input
      *          (e.g. sum of slices != x + modulus)
      **/
     fn from(x: Field) -> Self {
-        let mut result: Self = ScalarField { base4_slices: [0; N] };
-        let slices: [u8; N] = ScalarField::slice_field_into_base4(x);
+        let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
+        let (slices, skew): ([u8; N], bool) = get_wnaf_slices(x);
         result.base4_slices = slices;
+        result.skew = skew;
         if (N < 64) {
-            let mut acc: Field = slices[0] as Field;
+            let mut acc: Field = (slices[0] as Field) * 2 - 15;
             for i in 1..N {
                 acc *= 16;
-                acc += slices[i] as Field;
+                acc += (slices[i] as Field) * 2 - 15;
             }
-            assert(acc == x);
+            assert(acc - skew as Field == x);
         }
         else
         {
@@ -65,17 +107,17 @@ impl<N> std::convert::From<Field> for ScalarField<N> {
             for i in 1..(N/2) {
                 borrow_shift *= 16;
                 lo *= 16;
-                lo += slices[(N/2) + i] as Field;
+                lo += (slices[(N/2) + i] as Field) * 2 - 15;
                 hi *= 16;
-                hi += slices[i] as Field;
+                hi += (slices[i] as Field) * 2 - 15;
             }
             if ((N & 1) == 1)
             {
                 borrow_shift *= 16;
                 lo *= 16;
-                lo += slices[N-1] as Field;
+                lo += (slices[N-1] as Field) * 2 - 15;
             }
-
+            lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
             let (plo, phi) = get_modulus_slices();
             let borrow = get_borrow_flag(plo, lo) as Field;
@@ -103,34 +145,17 @@ impl<N> std::convert::Into<Field> for ScalarField<N> {
         let mut acc: Field = 0;
         for i in 0..N {
             acc = acc * 16;
-            acc = acc + self.base4_slices[i] as Field;
+            acc = acc + (self.base4_slices[i] as Field) * 2 - 15;
         }
+        acc -= self.skew as Field;
         acc
     }
 }
 
 impl<N> ScalarField<N> {
-    // we don't use to_be_radix because we want to re-use some partial sums that are computed (and inaccessible from the from_be_radix method)
-    unconstrained fn slice_field_into_base4(x: Field) -> [u8; N] {
-        let mut num_bytes = std::field::modulus_num_bits() / 8 + (std::field::modulus_num_bits() % 8 != 0) as u64;
-
-        let x_bytes: [u8] = x.to_le_bytes(num_bytes as u32);
-        let mut x_nibbles: [u8; N] = [0; N];
-        for i in 0..(N / 2) {
-            let lo = x_bytes[i] & 0xf;
-            let hi = x_bytes[i] >> 4;
-            x_nibbles[N - 2 - i - i] = hi;
-            x_nibbles[N - 1 - i - i] = lo;
-        }
-        if (N & 1 == 1) {
-            let hi = x_bytes[(N / 2)] >> 4;
-            x_nibbles[0] = hi;
-        }
-        x_nibbles
-    }
 
     fn new() -> Self {
-        Self { base4_slices: [0; N] }
+        Self { base4_slices: [0; N], skew: false }
     }
     fn get(self, idx: u64) -> u8 {
         self.base4_slices[idx]

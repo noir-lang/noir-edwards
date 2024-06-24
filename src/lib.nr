@@ -249,6 +249,11 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
             let y = table_y[idx];
             accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
         }
+
+        // todo fix
+        if (scalar.skew) {
+            accumulator = accumulator - self;
+        }
         accumulator
     }
 
@@ -282,7 +287,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         for j in 0..N {
             point_tables[j] = points[j].compute_straus_point_table(a, d);
         }
-        
+
         let idx = scalars[0].base4_slices[0];
         let mut accumulator: Self = Curve{ x: point_tables[0].0[idx], y: point_tables[0].1[idx] };
         for j in 1..N {
@@ -290,7 +295,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
             let P = Curve{ x: point_tables[j].0[idx], y: point_tables[j].1[idx] };
             accumulator = accumulator.add_internal(P, a, d);
         }
-        for i in 0..NScalarSlices {
+        for i in 1..NScalarSlices {
             accumulator = accumulator.dbl_internal(a, d);
             accumulator = accumulator.dbl_internal(a, d);
             accumulator = accumulator.dbl_internal(a, d);
@@ -300,6 +305,13 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
                 let x = point_tables[j].0[idx];
                 let y = point_tables[j].1[idx];
                 accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
+            }
+        }
+
+        for j in 0..N {
+            if (scalars[j].skew == true)
+            {
+                accumulator = accumulator - points[j];
             }
         }
         accumulator
@@ -413,13 +425,18 @@ impl<Params> Curve<Params> {
     fn compute_straus_point_table(self, a: Field, d: Field) -> ([Field; 16], [Field; 16]) {
         let mut table_x: [Field; 16] = [0; 16];
         let mut table_y: [Field; 16] = [0; 16];
-        table_x[0] = 0;
-        table_y[0] = 1;
-        for i in 1..16 {
-            let Q = Curve { x: table_x[i - 1], y: table_y[i - 1] };
-            let V = self.add_internal(Q, a, d);
-            table_x[i] = V.x;
-            table_y[i] = V.y;
+        table_x[8] = self.x;
+        table_y[8] = self.y;
+        let D = self.dbl_internal(a, d);
+        for i in 1..8 {
+            let Q = Curve { x: table_x[7 + i], y: table_y[7 + i] };
+            let V = D.add_internal(Q, a, d);
+            table_x[8 + i] = V.x;
+            table_y[8 + i] = V.y;
+        }
+        for i in 0..8 {
+            table_x[i] = -table_x[15 - i];
+            table_y[i] = table_y[15 - i];
         }
         (table_x, table_y)
     }

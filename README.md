@@ -10,10 +10,11 @@ For example usage see `test.nr`
 
 List of potential optimizations to improve performance:
 
-1. represent scalars via windowed non-adjacent form instead of 4-bit windows (-15, -13, ..., 15) instead of (0, ..., 15)
-2. update barretenberg backend to identify when memory lookups always come in pairs. e.g. two MEM operations, different ids, read index is the same. backend can convert into 1 memory table with 2 values instead of 2 memory tables with 1 value
+1. update barretenberg backend to identify when memory lookups always come in pairs. e.g. two MEM operations, different ids, read index is the same. backend can convert into 1 memory table with 2 values instead of 2 memory tables with 1 value
+
 ```
-MEM (id: 1, read at: x1, value: x125) 
-MEM (id: 2, read at: x1, value: x126) 
+MEM (id: 1, read at: x1, value: x125)
+MEM (id: 2, read at: x1, value: x126)
 ```
-3. fix barretenberg bug where range checks for values <2^{14} create an unneccessary addition gate.
+
+2. fix barretenberg bug where range checks for values <2^{14} create an unneccessary addition gate.
