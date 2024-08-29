@@ -11,12 +11,12 @@
  *          N.B. ScalarField bit values are not constrained to be smaller than the TE curve group order.
  *          ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
  **/
-struct ScalarField<N> {
+struct ScalarField<let N: u32> {
     base4_slices: [u8; N],
     skew: bool
 }
 
-unconstrained fn get_wnaf_slices<N>(x: Field) -> ([u8; N], bool) {
+unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
 
     let mut result: [u8; N] = [0; N];
     let mut nibbles = x.to_le_radix(16, N);
@@ -76,7 +76,7 @@ unconstrained fn get_modulus_slices() -> (Field, Field) {
 unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
     lhs_lo.lt(rhs_lo + 1)
 }
-impl<N> std::convert::From<Field> for ScalarField<N> {
+impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
 
 
@@ -124,7 +124,7 @@ impl<N> std::convert::From<Field> for ScalarField<N> {
             let rlo = plo - lo + borrow * borrow_shift - 1; // -1 because we are checking a strict <, not <=
             let rhi = phi - hi - borrow;
             let offset = (N & 1 == 1) as u8;
-            let hibits = (N / 2) * 4;
+            let hibits = (N as u8 / 2) * 4;
             let lobits = hibits + offset * 4;
             rlo.assert_max_bit_size(lobits as u32);
             rhi.assert_max_bit_size(hibits as u32);
@@ -136,7 +136,7 @@ impl<N> std::convert::From<Field> for ScalarField<N> {
     }
 }
 
-impl<N> std::convert::Into<Field> for ScalarField<N> {
+impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
     /**
      * @brief construct from tuple of field elements
      * @details use this method instead of `new` if you know x/y is on the curve
@@ -152,7 +152,7 @@ impl<N> std::convert::Into<Field> for ScalarField<N> {
     }
 }
 
-impl<N> ScalarField<N> {
+impl<let N: u32> ScalarField<N> {
 
     fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }

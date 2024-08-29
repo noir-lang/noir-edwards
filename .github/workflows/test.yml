@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  NARGO_VERSION: 0.31.0
+  NARGO_VERSION: 0.32.0
 
 jobs:
   test:
