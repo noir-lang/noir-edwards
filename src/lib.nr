@@ -37,8 +37,8 @@ trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub
     fn sub(self, x: Self) -> Self { self - x }
     fn neg(self) -> Self { std::ops::Neg::neg(self) }
     fn dbl(self) -> Self;
-    fn mul<NScalarSlices>(self, x: ScalarField<NScalarSlices>) -> Self;
-    fn msm<N, NScalarSlices> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self;
+    fn mul<let NScalarSlices: u32>(self, x: ScalarField<NScalarSlices>) -> Self;
+    fn msm<let N: u32, let NScalarSlices: u32> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self;
 
     fn eq(self, x: Self) -> bool { self == x }
     fn is_zero(self) -> bool { self == Self::zero() }
@@ -222,7 +222,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      *
      * TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
      **/
-    fn mul<NScalarSlices>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
+    fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
         // define a, d params locally to make code more readable (shouldn't affect performance) 
         let a = Params::a();
         let d = Params::d();
@@ -277,7 +277,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      *
      * TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
      **/
-    fn msm<N, NScalarSlices> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self
+    fn msm<let N: u32, let NScalarSlices: u32> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self
     {
         let a = Params::a();
         let d = Params::d();
