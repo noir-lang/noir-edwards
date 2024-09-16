@@ -17,9 +17,8 @@ struct ScalarField<let N: u32> {
 }
 
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
-
     let mut result: [u8; N] = [0; N];
-    let mut nibbles = x.to_le_radix(16, N);
+    let mut nibbles: [u8; N] = x.to_le_radix(16);
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] += skew as u8;
@@ -48,7 +47,6 @@ unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
 
 #[test]
 fn test_wnaf() {
-
     let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
     let (t0, t1) = get_wnaf_slices(result);
     let expected = from_wnaf_slices(t0, t1);
@@ -78,8 +76,6 @@ unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
 }
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
-
-
     /**
      * @brief construct from a field element
      * @details if N >= 64 we perform extra checks to ensure the slice decomposition represents the same integral value as the input
@@ -97,22 +93,19 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
                 acc += (slices[i] as Field) * 2 - 15;
             }
             assert(acc - skew as Field == x);
-        }
-        else
-        {
+        } else {
             // TODO: if num bits = 64, validate in sum of the bits is smaller than the Field modulus
-            let mut lo: Field = slices[(N/2)] as Field;
+            let mut lo: Field = slices[(N / 2)] as Field;
             let mut hi: Field = slices[0] as Field;
             let mut borrow_shift = 1;
-            for i in 1..(N/2) {
+            for i in 1..(N / 2) {
                 borrow_shift *= 16;
                 lo *= 16;
                 lo += (slices[(N/2) + i] as Field) * 2 - 15;
                 hi *= 16;
                 hi += (slices[i] as Field) * 2 - 15;
             }
-            if ((N & 1) == 1)
-            {
+            if ((N & 1) == 1) {
                 borrow_shift *= 16;
                 lo *= 16;
                 lo += (slices[N-1] as Field) * 2 - 15;

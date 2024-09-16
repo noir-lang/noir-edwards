@@ -1,8 +1,5 @@
-use dep::std;
-use dep::std::ec;
 use crate::scalar_field::ScalarField;
 use crate::Curve;
-use crate::TECurveParameterTrait;
 use crate::bjj::BabyJubJubParams;
 use std::ec::consts::te::baby_jubjub;
 use std::ec::tecurve::affine::Point as TEPoint;

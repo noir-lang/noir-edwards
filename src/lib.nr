@@ -2,7 +2,6 @@ mod scalar_field;
 mod test;
 mod bjj;
 
-use dep::std;
 use crate::scalar_field::ScalarField;
 
 struct Curve<Params> {
@@ -70,7 +69,7 @@ impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait
      *
      * Cost: 7 gates
      **/
-    fn add(self, other:Self) -> Self {
+    fn add(self, other: Self) -> Self {
         Curve::add_internal(self, other, Params::a(), Params::d())
     }
 }
@@ -82,7 +81,7 @@ impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait
      * Cost: usually 0, will cost 1 gate if the `x` coordinate needs to be converted into a witness
      **/
     fn neg(self) -> Self {
-        Curve{ x: -self.x, y: self.y }
+        Curve { x: -self.x, y: self.y }
     }
 }
 
@@ -92,7 +91,7 @@ impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait
      *
      * Cost: 7 gates
      **/
-    fn sub(self, other:Self) -> Self {
+    fn sub(self, other: Self) -> Self {
         Curve::add_internal(self, other.neg(), Params::a(), Params::d())
     }
 }
@@ -103,7 +102,7 @@ impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait 
      *
      * Cost: 6 gates
      **/
-    fn eq(self, other:Self) -> bool {
+    fn eq(self, other: Self) -> bool {
         (self.x == other.x) & (self.y == other.y)
     }
 }
@@ -116,7 +115,7 @@ impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: 
      * Cost: 0 gates
      **/
     fn from((x, y): (Field, Field)) -> Self {
-        Curve{ x, y }
+        Curve { x, y }
     }
 }
 
@@ -132,7 +131,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      * Cost: 3 gates
      **/
     fn new(x: Field, y: Field) -> Self {
-        let result = Curve{ x, y };
+        let result = Curve { x, y };
         result.assert_is_on_curve();
         result
     }
@@ -142,16 +141,18 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      *
      * Cost: 0 gates
      **/
-    fn zero() -> Self { Curve{ x: 0, y: 1 } }
+    fn zero() -> Self {
+        Curve { x: 0, y: 1 }
+    }
 
     /**
      * @brief return the Generator of the group
      *
      * Cost: 0 gates (assuming Params trait returns values known at compile time!)
      **/
-    fn one() -> Self { 
+    fn one() -> Self {
         let (x, y) = Params::gen();
-        Curve{ x, y }
+        Curve { x, y }
     }
 
     /**
@@ -195,7 +196,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         let t2 = Params::a() * t0 + t1;
         let t3 = 1 + Params::d() * t0 * t1;
         (t2 == t3)
-    } 
+    }
 
     /**
      * @brief compute `self + self`
@@ -277,8 +278,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      *
      * TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
      **/
-    fn msm<let N: u32, let NScalarSlices: u32> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self
-    {
+    fn msm<let N: u32, let NScalarSlices: u32>(points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self {
         let a = Params::a();
         let d = Params::d();
 
@@ -289,10 +289,10 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         }
 
         let idx = scalars[0].base4_slices[0];
-        let mut accumulator: Self = Curve{ x: point_tables[0].0[idx], y: point_tables[0].1[idx] };
+        let mut accumulator: Self = Curve { x: point_tables[0].0[idx], y: point_tables[0].1[idx] };
         for j in 1..N {
             let idx = scalars[j].base4_slices[0];
-            let P = Curve{ x: point_tables[j].0[idx], y: point_tables[j].1[idx] };
+            let P = Curve { x: point_tables[j].0[idx], y: point_tables[j].1[idx] };
             accumulator = accumulator.add_internal(P, a, d);
         }
         for i in 1..NScalarSlices {
@@ -309,8 +309,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         }
 
         for j in 0..N {
-            if (scalars[j].skew == true)
-            {
+            if (scalars[j].skew == true) {
                 accumulator = accumulator - points[j];
             }
         }
@@ -324,15 +323,6 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
 // ####################################################################################################################
 // ####################################################################################################################
 impl<Params> Curve<Params> {
-    /**
-     * @brief add points together, return output + lambda term
-     **/
-    unconstrained pub fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
-        let lambda = y1 * y2 * x1 * x2;
-        let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
-        let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
-        (x, y, lambda)
-    }
 
     /**
      * @brief add two points together
@@ -345,7 +335,7 @@ impl<Params> Curve<Params> {
         let x2 = other.x;
         let y1 = self.y;
         let y2 = other.y;
-        let (x, y, lambda) = Curve::__add_unconstrained(x1, x2, y1, y2, a, d);
+        let (x, y, lambda) = __add_unconstrained(x1, x2, y1, y2, a, d);
         let x1x2 = x1 * x2;
         let x1y2 = x1 * y2;
         std::as_witness(x1x2);
@@ -372,7 +362,7 @@ impl<Params> Curve<Params> {
     fn dbl_internal(self, a: Field, d: Field) -> Self {
         let x1 = self.x;
         let y1 = self.y;
-        let (x3, y3, _) = Curve::__add_unconstrained(x1, x1, y1, y1, a, d);
+        let (x3, y3, _) = __add_unconstrained(x1, x1, y1, y1, a, d);
         let x1x1a = x1 * x1 * a;
         std::as_witness(x1x1a);
         // t1 = a*x_1^2 + y_1^2
@@ -429,7 +419,7 @@ impl<Params> Curve<Params> {
         table_y[8] = self.y;
         let D = self.dbl_internal(a, d);
         for i in 1..8 {
-            let Q = Curve { x: table_x[7 + i], y: table_y[7 + i] };
+            let Q = Self { x: table_x[7 + i], y: table_y[7 + i] };
             let V = D.add_internal(Q, a, d);
             table_x[8 + i] = V.x;
             table_y[8 + i] = V.y;
@@ -440,4 +430,14 @@ impl<Params> Curve<Params> {
         }
         (table_x, table_y)
     }
+}
+
+/**
+ * @brief add points together, return output + lambda term
+ **/
+unconstrained fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
+    let lambda = y1 * y2 * x1 * x2;
+    let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
+    let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
+    (x, y, lambda)
 }
