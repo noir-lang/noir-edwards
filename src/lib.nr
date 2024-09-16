@@ -14,18 +14,15 @@ struct Curve<Params> {
 // ### T R A I T S
 // ####################################################################################################################
 // ####################################################################################################################
-/**
- * @brief parametrises a Twisted Edwards curve
- **/
+
+/// Parametrises a Twisted Edwards curve
 trait TECurveParameterTrait {
     fn a() -> Field; // twisted edward curve parameter a
     fn d() -> Field; // twisted edward curve parameter d
     fn gen() -> (Field, Field); // generator point x/y coordinates
 }
 
-/**
- * @brief defines methods that a valid Curve implementation must satisfy
- **/
+/// Defines methods that a valid Curve implementation must satisfy
 trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg  {
     fn default() -> Self { std::default::Default::default  () }
     fn new(x: Field, y: Field) -> Self;
@@ -53,67 +50,56 @@ trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub
 // ####################################################################################################################
 // ####################################################################################################################
 impl<Params> std::default::Default for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief return point at infinity
-     *
-     * Cost: 0 gates
-     **/
+    /// Returns point at infinity
+    ///
+    /// Cost: 0 gates
     fn default() -> Self {
         Curve::zero()
     }
 }
 
 impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief compute `self + other`
-     *
-     * Cost: 7 gates
-     **/
+    /// Compute `self + other`
+    ///
+    /// Cost: 7 gates
     fn add(self, other: Self) -> Self {
         Curve::add_internal(self, other, Params::a(), Params::d())
     }
 }
 
 impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief negate a point
-     *
-     * Cost: usually 0, will cost 1 gate if the `x` coordinate needs to be converted into a witness
-     **/
+    /// Negate a point
+    ///
+    /// Cost: usually 0, will cost 1 gate if the `x` coordinate needs to be converted into a witness
     fn neg(self) -> Self {
         Curve { x: -self.x, y: self.y }
     }
 }
 
 impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief compute `self - other`
-     *
-     * Cost: 7 gates
-     **/
+    /// Compute `self - other`
+    ///
+    /// Cost: 7 gates
     fn sub(self, other: Self) -> Self {
         Curve::add_internal(self, other.neg(), Params::a(), Params::d())
     }
 }
 
 impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief compute `self == other`
-     *
-     * Cost: 6 gates
-     **/
+    /// Compute `self == other`
+    ///
+    /// Cost: 6 gates
     fn eq(self, other: Self) -> bool {
         (self.x == other.x) & (self.y == other.y)
     }
 }
 
 impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: TECurveParameterTrait {
-    /**
-     * @brief construct from tuple of field elements
-     * @details use this method instead of `new` if you know x/y is on the curve
-     *
-     * Cost: 0 gates
-     **/
+    /// Construct from tuple of field elements
+    /// 
+    /// Use this method instead of `new` if you know x/y is on the curve
+    ///
+    /// Cost: 0 gates
     fn from((x, y): (Field, Field)) -> Self {
         Curve { x, y }
     }
@@ -121,46 +107,39 @@ impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: 
 
 impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameterTrait {
 
-    /**
-     * @brief Construct a new point
-     * @details If you know the x/y coords form a valid point DO NOT USE THIS METHOD
-     *          This method calls `assert_is_on_curve` which costs 3 gates.
-     *          Instead, directly construct via Curve{x, y}
-     *          Or use from((x, y))
-     *
-     * Cost: 3 gates
-     **/
+    /// Construct a new point
+    /// 
+    /// If you know the x/y coords form a valid point DO NOT USE THIS METHOD
+    /// This method calls `assert_is_on_curve` which costs 3 gates.
+    /// Instead, directly construct via Curve{x, y} or use from((x, y))
+    ///
+    /// Cost: 3 gates
     fn new(x: Field, y: Field) -> Self {
         let result = Curve { x, y };
         result.assert_is_on_curve();
         result
     }
 
-    /**
-     * @brief return the Identity element (point at infinity)
-     *
-     * Cost: 0 gates
-     **/
+    /// Return the Identity element (point at infinity)
+    ///
+    /// Cost: 0 gates
     fn zero() -> Self {
         Curve { x: 0, y: 1 }
     }
 
-    /**
-     * @brief return the Generator of the group
-     *
-     * Cost: 0 gates (assuming Params trait returns values known at compile time!)
-     **/
+    /// Return the Generator of the group
+    ///
+    /// Cost: 0 gates (assuming Params trait returns values known at compile time!)
     fn one() -> Self {
         let (x, y) = Params::gen();
         Curve { x, y }
     }
 
-    /**
-     * @brief validate a point is on the curve
-     * @details cheaper than `is_on_curve` (assert is cheaper than returning a bool)
-     *
-     * Cost: 3 gates
-     **/
+    /// Validate a point is on the curve
+    /// 
+    /// cheaper than `is_on_curve` (assert is cheaper than returning a bool)
+    ///
+    /// Cost: 3 gates
     fn assert_is_on_curve(self) {
         let t0 = self.x * self.x;
         let t1 = self.y * self.y;
@@ -171,23 +150,21 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         assert(t2 == t3);
     }
 
-    /**
-     * @brief Constrain two points to equal each other
-     * @details Cheaper than `assert(self == other)` because no need to return a bool
-     *
-     * Cost: 0-2 gates (can do these asserts with just copy constraints)
-     **/
+    /// Constrain two points to equal each other
+    /// 
+    /// Cheaper than `assert(self == other)` because no need to return a bool
+    ///
+    /// Cost: 0-2 gates (can do these asserts with just copy constraints)
     fn assert_equal(self, other: Self) {
         assert(self.x == other.x);
         assert(self.y == other.y);
     }
 
-    /**
-     * @brief return a bool that describes whether the point is on the curve
-     * @details if you don't need to handle the failure case, it is cheaper to call `assert_is_on_curve`
-     *
-     * Cost: 5 gates
-     **/
+    /// Return a bool that describes whether the point is on the curve
+    /// 
+    /// If you don't need to handle the failure case, it is cheaper to call `assert_is_on_curve`
+    ///
+    /// Cost: 5 gates
     fn is_on_curve(self) -> bool {
         let t0 = self.x * self.x;
         let t1 = self.y * self.y;
@@ -198,31 +175,28 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         (t2 == t3)
     }
 
-    /**
-     * @brief compute `self + self`
-     *
-     * Cost: 5 gates
-     **/
+    /// Compute `self + self`
+    ///
+    /// Cost: 5 gates
     fn dbl(self) -> Self {
         Curve::dbl_internal(self, Params::a(), Params::d())
     }
 
-    /**
-     * @brief compute `self * scalar`
-     * @details uses the Straus method via lookup tables.
-     *          Assumes backend has an efficient implementation of a memory table abstraction
-     *          i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
-     * 
-     * Key cost components are as follows:
-     *      1: computing the Straus point lookup table (169 gates)
-     *      2: 252 point doublings (1260 gates)
-     *      3: 63 point additions (441 gates)
-     *      4: 126 table reads with runtime index (252 gates)
-     *
-     * Cost: 2122 gates + cost of creating ScalarField (110 gates)
-     *
-     * TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
-     **/
+    /// Compute `self * scalar`
+    /// 
+    /// Uses the Straus method via lookup tables.
+    /// Assumes backend has an efficient implementation of a memory table abstraction
+    /// i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
+    /// 
+    /// Key cost components are as follows:
+    ///      1: computing the Straus point lookup table (169 gates)
+    ///      2: 252 point doublings (1260 gates)
+    ///      3: 63 point additions (441 gates)
+    ///      4: 126 table reads with runtime index (252 gates)
+    ///
+    /// Cost: 2122 gates + cost of creating ScalarField (110 gates)
+    ///
+    /// TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
     fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
         // define a, d params locally to make code more readable (shouldn't affect performance) 
         let a = Params::a();
@@ -258,26 +232,25 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
         accumulator
     }
 
-    /**
-     * @brief compute `points[0] * scalar[0] + ... + points[N-1] * scalar[N-1]`
-     * @details Is cheaper than `mul` when processing >1 point due to reduced number of point doublings
-     *          uses the Straus MSM method via lookup tables.
-     *          Assumes backend has an efficient implementation of a memory table abstraction
-     *          i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
-     * 
-     * Key cost components are as follows
-     * PER POINT costs:
-     *      1: computing the Straus point lookup table (169N gates)
-     *      2: 63 point additions (441N gates)
-     *      3: 126 table reads with runtime index (252N gates)
-     *
-     * Additional costs:
-     *      1. 252 point doublings 1260 gates
-     *
-     * Cost: 1260 + 862N + cost of creating ScalarField (110N gates)
-     *
-     * TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
-     **/
+    /// compute `points[0] * scalar[0] + ... + points[N-1] * scalar[N-1]`
+    ///
+    /// Is cheaper than `mul` when processing >1 point due to reduced number of point doublings
+    /// uses the Straus MSM method via lookup tables.
+    /// Assumes backend has an efficient implementation of a memory table abstraction
+    /// i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
+    /// 
+    /// Key cost components are as follows
+    /// PER POINT costs:
+    ///      1: computing the Straus point lookup table (169N gates)
+    ///      2: 63 point additions (441N gates)
+    ///      3: 126 table reads with runtime index (252N gates)
+    ///
+    /// Additional costs:
+    ///      1. 252 point doublings 1260 gates
+    ///
+    /// Cost: 1260 + 862N + cost of creating ScalarField (110N gates)
+    ///
+    /// TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
     fn msm<let N: u32, let NScalarSlices: u32>(points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self {
         let a = Params::a();
         let d = Params::d();
@@ -324,12 +297,10 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
 // ####################################################################################################################
 impl<Params> Curve<Params> {
 
-    /**
-     * @brief add two points together
-     * @details This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
-     *          called from internal function.
-     *          e.g. compiler error if `mul` impl tries to call `add` :(
-     **/
+    /// add two points together
+    /// 
+    /// This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
+    /// called from internal function. e.g. compiler error if `mul` impl tries to call `add` :(
     fn add_internal(self, other: Self, a: Field, d: Field) -> Self {
         let x1 = self.x;
         let x2 = other.x;
@@ -353,12 +324,10 @@ impl<Params> Curve<Params> {
         Self { x, y }
     }
 
-    /**
-     * @brief add a point to itself
-     * @details This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
-     *          called from internal function.
-     *          e.g. compiler error if `mul` impl tries to call `dbl` :(
-     **/
+    /// add a point to itself
+    ///
+    /// This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
+    /// called from internal function. e.g. compiler error if `mul` impl tries to call `dbl` :(
     fn dbl_internal(self, a: Field, d: Field) -> Self {
         let x1 = self.x;
         let y1 = self.y;
@@ -382,36 +351,35 @@ impl<Params> Curve<Params> {
         Self { x: x3, y: y3 }
     }
 
-    /**
-     * @brief Compute a 4-bit lookup table of point multiples for the Straus windowed scalar multiplication algorithm.
-     * @details Table contains [0, P, 2P, ..., 15P], which is used in the scalar mul algorithm to minimize the total number of required point additions
-     *
-     * @note It is cheaper to use ([Field; 16], [Field; 16]) than it is ([Curve; 16]).
-     *       This is because the compiler will represent [Curve; 16] in 1 ROM array (vs 2 for [Field; 16], [Field; 16]).
-     *       This means that any index into the ROM array for [Curve; 16] requires an additional arithmetic gate to process.
-     *
-     *          For example consider `let P: Curve = table[idx]`
-     *          `table` will be a ROM array with 32 elements in it.
-     *          The x-coordinates will be located at `2 * idx`
-     *          The y-coordinates will be located at `2 * idx + 1`
-     *          If `idx` is not known at compile time (for Straus it isnt), 2 arithmetic gates are required to evaluate `2 * idx`, `2 * idx + 1`
-     *          before they can be used as arguments in a memory lookup protocol
-     *
-     *          Now consider `let P_x = table_x[idx]; let P_y = table_y[idx]`
-     *          In this example, `idx` can be directly used as the argument into a memory lookup protocol for both tables.
-     *
-     *          For the Barretenberg backend, the cost of a Read-Only memory lookup is 2 gates,
-     *          so splitting the x/y coordinates into separate tables means that the cost to lookup a point is 4 gates
-     *          2 extra arithmetic gates would increase the cost by 50%, which we avoid by returning `([Field; 16], [Field; 16])` instead of `([Curve; 16])`
-     *
-     * Key cost components are as follows:
-     *      1: Defining two size-16 lookup tables (2 gates per element, 32 elements = 64 gates)
-     *      2: 15 point additions (7 * 5 = 105)
-     *
-     * Total Cost: 169 gates
-     *
-     * TODO: use windowed non-adjacent form to remove 8 point additions
-     **/
+    /// Compute a 4-bit lookup table of point multiples for the Straus windowed scalar multiplication algorithm.
+    /// 
+    /// Table contains [0, P, 2P, ..., 15P], which is used in the scalar mul algorithm to minimize the total number of required point additions
+    ///
+    /// It is cheaper to use ([Field; 16], [Field; 16]) than it is ([Curve; 16]).
+    /// This is because the compiler will represent [Curve; 16] in 1 ROM array (vs 2 for [Field; 16], [Field; 16]).
+    /// This means that any index into the ROM array for [Curve; 16] requires an additional arithmetic gate to process.
+    ///
+    ///      For example consider `let P: Curve = table[idx]`
+    ///      `table` will be a ROM array with 32 elements in it.
+    ///      The x-coordinates will be located at `2 * idx`
+    ///      The y-coordinates will be located at `2 * idx + 1`
+    ///      If `idx` is not known at compile time (for Straus it isnt), 2 arithmetic gates are required to evaluate `2 * idx`, `2 * idx + 1`
+    ///      before they can be used as arguments in a memory lookup protocol
+    ///
+    ///      Now consider `let P_x = table_x[idx]; let P_y = table_y[idx]`
+    ///      In this example, `idx` can be directly used as the argument into a memory lookup protocol for both tables.
+    ///
+    ///      For the Barretenberg backend, the cost of a Read-Only memory lookup is 2 gates,
+    ///      so splitting the x/y coordinates into separate tables means that the cost to lookup a point is 4 gates
+    ///      2 extra arithmetic gates would increase the cost by 50%, which we avoid by returning `([Field; 16], [Field; 16])` instead of `([Curve; 16])`
+    ///
+    /// Key cost components are as follows:
+    ///      1: Defining two size-16 lookup tables (2 gates per element, 32 elements = 64 gates)
+    ///      2: 15 point additions (7 * 5 = 105)
+    ///
+    /// Total Cost: 169 gates
+    ///
+    /// TODO: use windowed non-adjacent form to remove 8 point additions
     fn compute_straus_point_table(self, a: Field, d: Field) -> ([Field; 16], [Field; 16]) {
         let mut table_x: [Field; 16] = [0; 16];
         let mut table_y: [Field; 16] = [0; 16];
@@ -432,9 +400,7 @@ impl<Params> Curve<Params> {
     }
 }
 
-/**
- * @brief add points together, return output + lambda term
- **/
+/// add points together, return output + lambda ter
 unconstrained fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
     let lambda = y1 * y2 * x1 * x2;
     let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
