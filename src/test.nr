@@ -10,7 +10,7 @@ type BabyJubJub = Curve<BabyJubJubParams>;
 fn test_sub() {
     let bjj = baby_jubjub();
     let bjj_point = bjj.base8;
-    let point:  Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
+    let point: Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
 
     let expected = point + (point + (point));
     let result = point.dbl().dbl().sub(point);
@@ -26,7 +26,7 @@ fn test_mul() {
 
     let expected = bjj.curve.mul(scalar, bjj_point);
     let scalar_f: ScalarField<63> = ScalarField::from(scalar);
-    let point:  BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
+    let point: BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
     let result = point.mul(scalar_f);
     let scalar_converted: Field = ScalarField::into(scalar_f);
     assert(scalar_converted == scalar);
@@ -40,7 +40,7 @@ fn test_msm() {
     let bjj = baby_jubjub();
     let bjj_point = bjj.base8;
 
-    let point:  BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
+    let point: BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
     let mut scalar_values: [Field; 1] = [0; 1];
     let mut points: [BabyJubJub; 1] = [Curve { x: 0, y: 0 }; 1];
     let mut scalars: [ScalarField<63>; 1] = [ScalarField::new(); 1];
@@ -52,8 +52,8 @@ fn test_msm() {
     bjj_points[0] = TEPoint::new(points[0].x, points[0].y);
 
     for i in 1..1 {
-        points[i] = points[i-1].dbl();
-        scalar_values[i] = scalar_values[i-1] + scalar;
+        points[i] = points[i - 1].dbl();
+        scalar_values[i] = scalar_values[i - 1] + scalar;
     }
 
     for i in 0..1 {

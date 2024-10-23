@@ -4,7 +4,7 @@ mod bjj;
 
 use crate::scalar_field::ScalarField;
 
-struct Curve<Params> {
+pub struct Curve<Params> {
     x: Field,
     y: Field,
 }
@@ -23,21 +23,39 @@ trait TECurveParameterTrait {
 }
 
 /// Defines methods that a valid Curve implementation must satisfy
-trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg  {
-    fn default() -> Self { std::default::Default::default  () }
+trait CurveTrait<Params>
+where
+    CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg,
+{
+    fn default() -> Self {
+        std::default::Default::default()
+    }
     fn new(x: Field, y: Field) -> Self;
     fn zero() -> Self;
     fn one() -> Self;
 
-    fn add(self, x: Self) -> Self { self + x }
-    fn sub(self, x: Self) -> Self { self - x }
-    fn neg(self) -> Self { std::ops::Neg::neg(self) }
+    fn add(self, x: Self) -> Self {
+        self + x
+    }
+    fn sub(self, x: Self) -> Self {
+        self - x
+    }
+    fn neg(self) -> Self {
+        std::ops::Neg::neg(self)
+    }
     fn dbl(self) -> Self;
     fn mul<let NScalarSlices: u32>(self, x: ScalarField<NScalarSlices>) -> Self;
-    fn msm<let N: u32, let NScalarSlices: u32> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self;
+    fn msm<let N: u32, let NScalarSlices: u32>(
+        points: [Self; N],
+        scalars: [ScalarField<NScalarSlices>; N],
+    ) -> Self;
 
-    fn eq(self, x: Self) -> bool { self == x }
-    fn is_zero(self) -> bool { self == Self::zero() }
+    fn eq(self, x: Self) -> bool {
+        self == x
+    }
+    fn is_zero(self) -> bool {
+        self == Self::zero()
+    }
 
     fn is_on_curve(self) -> bool;
     fn assert_is_on_curve(self);
@@ -49,7 +67,10 @@ trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub
 // ### C O N S T R A I N E D    F U N C T I O N S
 // ####################################################################################################################
 // ####################################################################################################################
-impl<Params> std::default::Default for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::default::Default for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Returns point at infinity
     ///
     /// Cost: 0 gates
@@ -58,7 +79,10 @@ impl<Params> std::default::Default for Curve<Params> where Params: TECurveParame
     }
 }
 
-impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Add for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Compute `self + other`
     ///
     /// Cost: 7 gates
@@ -67,7 +91,10 @@ impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Neg for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Negate a point
     ///
     /// Cost: usually 0, will cost 1 gate if the `x` coordinate needs to be converted into a witness
@@ -76,7 +103,10 @@ impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Sub for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Compute `self - other`
     ///
     /// Cost: 7 gates
@@ -85,7 +115,10 @@ impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::cmp::Eq for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Compute `self == other`
     ///
     /// Cost: 6 gates
@@ -94,9 +127,12 @@ impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait 
     }
 }
 
-impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::convert::From<(Field, Field)> for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /// Construct from tuple of field elements
-    /// 
+    ///
     /// Use this method instead of `new` if you know x/y is on the curve
     ///
     /// Cost: 0 gates
@@ -105,10 +141,13 @@ impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: 
     }
 }
 
-impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> CurveTrait<Params> for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
 
     /// Construct a new point
-    /// 
+    ///
     /// If you know the x/y coords form a valid point DO NOT USE THIS METHOD
     /// This method calls `assert_is_on_curve` which costs 3 gates.
     /// Instead, directly construct via Curve{x, y} or use from((x, y))
@@ -136,7 +175,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     }
 
     /// Validate a point is on the curve
-    /// 
+    ///
     /// cheaper than `is_on_curve` (assert is cheaper than returning a bool)
     ///
     /// Cost: 3 gates
@@ -151,7 +190,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     }
 
     /// Constrain two points to equal each other
-    /// 
+    ///
     /// Cheaper than `assert(self == other)` because no need to return a bool
     ///
     /// Cost: 0-2 gates (can do these asserts with just copy constraints)
@@ -161,7 +200,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     }
 
     /// Return a bool that describes whether the point is on the curve
-    /// 
+    ///
     /// If you don't need to handle the failure case, it is cheaper to call `assert_is_on_curve`
     ///
     /// Cost: 5 gates
@@ -183,11 +222,11 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     }
 
     /// Compute `self * scalar`
-    /// 
+    ///
     /// Uses the Straus method via lookup tables.
     /// Assumes backend has an efficient implementation of a memory table abstraction
     /// i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
-    /// 
+    ///
     /// Key cost components are as follows:
     ///      1: computing the Straus point lookup table (169 gates)
     ///      2: 252 point doublings (1260 gates)
@@ -198,7 +237,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     ///
     /// TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
     fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
-        // define a, d params locally to make code more readable (shouldn't affect performance) 
+        // define a, d params locally to make code more readable (shouldn't affect performance)
         let a = Params::a();
         let d = Params::d();
 
@@ -222,7 +261,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
             let idx: u8 = scalar.base4_slices[i];
             let x = table_x[idx];
             let y = table_y[idx];
-            accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
+            accumulator = accumulator.add_internal(Curve { x, y }, a, d);
         }
 
         // todo fix
@@ -238,7 +277,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     /// uses the Straus MSM method via lookup tables.
     /// Assumes backend has an efficient implementation of a memory table abstraction
     /// i.e. `let x = table[y]` is efficient even if `y` is not known at compile time
-    /// 
+    ///
     /// Key cost components are as follows
     /// PER POINT costs:
     ///      1: computing the Straus point lookup table (169N gates)
@@ -251,7 +290,10 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
     /// Cost: 1260 + 862N + cost of creating ScalarField (110N gates)
     ///
     /// TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
-    fn msm<let N: u32, let NScalarSlices: u32>(points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self {
+    fn msm<let N: u32, let NScalarSlices: u32>(
+        points: [Self; N],
+        scalars: [ScalarField<NScalarSlices>; N],
+    ) -> Self {
         let a = Params::a();
         let d = Params::d();
 
@@ -277,7 +319,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
                 let idx: u8 = scalars[j].base4_slices[i];
                 let x = point_tables[j].0[idx];
                 let y = point_tables[j].1[idx];
-                accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
+                accumulator = accumulator.add_internal(Curve { x, y }, a, d);
             }
         }
 
@@ -298,7 +340,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
 impl<Params> Curve<Params> {
 
     /// add two points together
-    /// 
+    ///
     /// This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
     /// called from internal function. e.g. compiler error if `mul` impl tries to call `add` :(
     fn add_internal(self, other: Self, a: Field, d: Field) -> Self {
@@ -352,7 +394,7 @@ impl<Params> Curve<Params> {
     }
 
     /// Compute a 4-bit lookup table of point multiples for the Straus windowed scalar multiplication algorithm.
-    /// 
+    ///
     /// Table contains [0, P, 2P, ..., 15P], which is used in the scalar mul algorithm to minimize the total number of required point additions
     ///
     /// It is cheaper to use ([Field; 16], [Field; 16]) than it is ([Curve; 16]).
@@ -401,7 +443,14 @@ impl<Params> Curve<Params> {
 }
 
 /// add points together, return output + lambda ter
-unconstrained fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
+unconstrained fn __add_unconstrained(
+    x1: Field,
+    x2: Field,
+    y1: Field,
+    y2: Field,
+    a: Field,
+    d: Field,
+) -> (Field, Field, Field) {
     let lambda = y1 * y2 * x1 * x2;
     let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
     let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
