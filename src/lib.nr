@@ -4,7 +4,7 @@ mod bjj;
 
 use crate::scalar_field::ScalarField;
 
-struct Curve<Params> {
+pub struct Curve<Params> {
     x: Field,
     y: Field,
 }
@@ -17,7 +17,7 @@ struct Curve<Params> {
 /**
  * @brief parametrises a Twisted Edwards curve
  **/
-trait TECurveParameterTrait {
+pub trait TECurveParameterTrait {
     fn a() -> Field; // twisted edward curve parameter a
     fn d() -> Field; // twisted edward curve parameter d
     fn gen() -> (Field, Field); // generator point x/y coordinates
@@ -26,21 +26,39 @@ trait TECurveParameterTrait {
 /**
  * @brief defines methods that a valid Curve implementation must satisfy
  **/
-trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg  {
-    fn default() -> Self { std::default::Default::default  () }
+trait CurveTrait<Params>
+where
+    CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::ops::Eq + std::ops::Neg,
+{
+    fn default() -> Self {
+        std::default::Default::default()
+    }
     fn new(x: Field, y: Field) -> Self;
     fn zero() -> Self;
     fn one() -> Self;
 
-    fn add(self, x: Self) -> Self { self + x }
-    fn sub(self, x: Self) -> Self { self - x }
-    fn neg(self) -> Self { std::ops::Neg::neg(self) }
+    fn add(self, x: Self) -> Self {
+        self + x
+    }
+    fn sub(self, x: Self) -> Self {
+        self - x
+    }
+    fn neg(self) -> Self {
+        std::ops::Neg::neg(self)
+    }
     fn dbl(self) -> Self;
     fn mul<let NScalarSlices: u32>(self, x: ScalarField<NScalarSlices>) -> Self;
-    fn msm<let N: u32, let NScalarSlices: u32> (points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self;
+    fn msm<let N: u32, let NScalarSlices: u32>(
+        points: [Self; N],
+        scalars: [ScalarField<NScalarSlices>; N],
+    ) -> Self;
 
-    fn eq(self, x: Self) -> bool { self == x }
-    fn is_zero(self) -> bool { self == Self::zero() }
+    fn eq(self, x: Self) -> bool {
+        self == x
+    }
+    fn is_zero(self) -> bool {
+        self == Self::zero()
+    }
 
     fn is_on_curve(self) -> bool;
     fn assert_is_on_curve(self);
@@ -52,7 +70,10 @@ trait CurveTrait<Params> where CurveTrait<Params>: std::ops::Add + std::ops::Sub
 // ### C O N S T R A I N E D    F U N C T I O N S
 // ####################################################################################################################
 // ####################################################################################################################
-impl<Params> std::default::Default for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::default::Default for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief return point at infinity
      *
@@ -63,7 +84,10 @@ impl<Params> std::default::Default for Curve<Params> where Params: TECurveParame
     }
 }
 
-impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Add for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief compute `self + other`
      *
@@ -74,7 +98,10 @@ impl<Params> std::ops::Add for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Neg for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief negate a point
      *
@@ -85,7 +112,10 @@ impl<Params> std::ops::Neg for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::ops::Sub for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief compute `self - other`
      *
@@ -96,7 +126,10 @@ impl<Params> std::ops::Sub for Curve<Params> where Params: TECurveParameterTrait
     }
 }
 
-impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::cmp::Eq for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief compute `self == other`
      *
@@ -107,7 +140,10 @@ impl<Params> std::cmp::Eq for Curve<Params> where Params: TECurveParameterTrait 
     }
 }
 
-impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> std::convert::From<(Field, Field)> for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
     /**
      * @brief construct from tuple of field elements
      * @details use this method instead of `new` if you know x/y is on the curve
@@ -119,7 +155,10 @@ impl<Params> std::convert::From<(Field, Field)> for Curve<Params> where Params: 
     }
 }
 
-impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameterTrait {
+impl<Params> CurveTrait<Params> for Curve<Params>
+where
+    Params: TECurveParameterTrait,
+{
 
     /**
      * @brief Construct a new point
@@ -224,7 +263,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      * TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
      **/
     fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
-        // define a, d params locally to make code more readable (shouldn't affect performance) 
+        // define a, d params locally to make code more readable (shouldn't affect performance)
         let a = Params::a();
         let d = Params::d();
 
@@ -248,7 +287,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
             let idx: u8 = scalar.base4_slices[i];
             let x = table_x[idx];
             let y = table_y[idx];
-            accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
+            accumulator = accumulator.add_internal(Curve { x, y }, a, d);
         }
 
         // todo fix
@@ -278,7 +317,10 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
      *
      * TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
      **/
-    fn msm<let N: u32, let NScalarSlices: u32>(points: [Self; N], scalars: [ScalarField<NScalarSlices>; N]) -> Self {
+    fn msm<let N: u32, let NScalarSlices: u32>(
+        points: [Self; N],
+        scalars: [ScalarField<NScalarSlices>; N],
+    ) -> Self {
         let a = Params::a();
         let d = Params::d();
 
@@ -304,7 +346,7 @@ impl<Params> CurveTrait<Params> for Curve<Params> where Params: TECurveParameter
                 let idx: u8 = scalars[j].base4_slices[i];
                 let x = point_tables[j].0[idx];
                 let y = point_tables[j].1[idx];
-                accumulator = accumulator.add_internal(Curve{ x, y }, a, d);
+                accumulator = accumulator.add_internal(Curve { x, y }, a, d);
             }
         }
 
@@ -435,7 +477,14 @@ impl<Params> Curve<Params> {
 /**
  * @brief add points together, return output + lambda term
  **/
-unconstrained fn __add_unconstrained(x1: Field, x2: Field, y1: Field, y2: Field, a: Field, d: Field) -> (Field, Field, Field) {
+unconstrained fn __add_unconstrained(
+    x1: Field,
+    x2: Field,
+    y1: Field,
+    y2: Field,
+    a: Field,
+    d: Field,
+) -> (Field, Field, Field) {
     let lambda = y1 * y2 * x1 * x2;
     let y = (x1 * x2 * a - y1 * y2) / (lambda * d - 1);
     let x = (x1 * y2 + y1 * x2) / (lambda * d + 1);
