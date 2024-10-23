@@ -1,5 +1,5 @@
 /// ScalarField represents a scalar multiplier as a sequence of 4-bit slices
-/// 
+///
 /// There is nuance to ScalarField, because twisted edwards curves generally have prime group orders that easily fit into a Field
 /// We can therefore obtain cheap conversions by simply summing up the bit slices and validate they equal the input scalar
 /// However...when converting arbitrary field elements (i.e. scalars that are multiples of a TE curve group order),
@@ -12,7 +12,7 @@
 /// ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
 struct ScalarField<let N: u32> {
     base4_slices: [u8; N],
-    skew: bool
+    skew: bool,
 }
 
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
