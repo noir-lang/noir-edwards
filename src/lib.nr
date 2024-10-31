@@ -88,10 +88,7 @@ where
     }
 }
 
-impl<Params> std::ops::Neg for Curve<Params>
-where
-    Params: TECurveParameterTrait,
-{
+impl<Params> std::ops::Neg for Curve<Params> {
     /// Negate a point
     ///
     /// Cost: usually 0, will cost 1 gate if the `x` coordinate needs to be converted into a witness
@@ -112,10 +109,7 @@ where
     }
 }
 
-impl<Params> std::cmp::Eq for Curve<Params>
-where
-    Params: TECurveParameterTrait,
-{
+impl<Params> std::cmp::Eq for Curve<Params> {
     /// Compute `self == other`
     ///
     /// Cost: 6 gates
@@ -124,10 +118,7 @@ where
     }
 }
 
-impl<Params> std::convert::From<(Field, Field)> for Curve<Params>
-where
-    Params: TECurveParameterTrait,
-{
+impl<Params> std::convert::From<(Field, Field)> for Curve<Params> {
     /// Construct from tuple of field elements
     ///
     /// Use this method instead of `new` if you know x/y is on the curve
