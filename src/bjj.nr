@@ -1,5 +1,5 @@
-use crate::TECurveParameterTrait;
 use crate::Curve;
+use crate::TECurveParameterTrait;
 
 pub struct BabyJubJubParams {}
 impl TECurveParameterTrait for BabyJubJubParams {

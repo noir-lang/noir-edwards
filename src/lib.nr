@@ -23,8 +23,7 @@ trait TECurveParameterTrait {
 }
 
 /// Defines methods that a valid Curve implementation must satisfy
-trait CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::cmp::Eq + std::ops::Neg
-{
+trait CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::cmp::Eq + std::ops::Neg {
     fn default() -> Self {
         std::default::Default::default()
     }
