@@ -1,8 +1,8 @@
 use crate::bjj::BabyJubJubParams;
 use crate::Curve;
 use crate::scalar_field::ScalarField;
-use std::ec::consts::te::baby_jubjub;
-use std::ec::tecurve::affine::Point as TEPoint;
+
+use ec::{consts::te::baby_jubjub, tecurve::affine::Point as TEPoint};
 
 type BabyJubJub = Curve<BabyJubJubParams>;
 

@@ -10,9 +10,9 @@
 ///
 /// N.B. ScalarField bit values are not constrained to be smaller than the TE curve group order.
 /// ScalarField is used when performing scalar multiplications, where all operations wrap modulo the curve order
-struct ScalarField<let N: u32> {
-    base4_slices: [u8; N],
-    skew: bool,
+pub struct ScalarField<let N: u32> {
+    pub(crate) base4_slices: [u8; N],
+    pub(crate) skew: bool,
 }
 
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
@@ -148,7 +148,7 @@ impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 
 impl<let N: u32> ScalarField<N> {
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
     fn get(self, idx: u64) -> u8 {

@@ -2,7 +2,7 @@ mod scalar_field;
 mod test;
 mod bjj;
 
-use crate::scalar_field::ScalarField;
+pub use crate::scalar_field::ScalarField;
 
 pub struct Curve<Params> {
     x: Field,
