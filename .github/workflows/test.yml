@@ -27,6 +27,7 @@ jobs:
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
 
   test:
+    needs: [noir-version-list]
     name: Test on Nargo ${{matrix.toolchain}}
     runs-on: ubuntu-latest
     strategy:
