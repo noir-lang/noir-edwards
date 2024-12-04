@@ -12,6 +12,7 @@ env:
 
 jobs:
   noir-version-list:
+    name: Query supported Noir versions
     runs-on: ubuntu-latest
     outputs:
       noir_versions: ${{ steps.get_versions.outputs.versions }}
