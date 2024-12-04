@@ -22,7 +22,7 @@ jobs:
           MINIMUM_SUPPORTED_VERSION=v0.37.0
           
           # gh returns the Noir releases in reverse chronological order so we keep all releases published after the minimum supported version.
-          VERSIONS=$(gh release list -R https://github.com/noir-lang/noir --exclude-pre-releases --json tagName -q 'map(.tagName) | index("$MINIMUM_SUPPORTED_VERSION") as $index | .[0:$index+1]')
+          VERSIONS=$(gh release list -R https://github.com/noir-lang/noir --exclude-pre-releases --json tagName -q 'map(.tagName) | index("$MINIMUM_SUPPORTED_VERSION") as $index | if $index then .[0:$index+1] else [MINIMUM_SUPPORTED_VERSION] end')
           echo "versions=$VERSIONS"
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
         env:
