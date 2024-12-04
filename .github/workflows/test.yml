@@ -25,6 +25,8 @@ jobs:
           VERSIONS=$(gh release list -R https://github.com/noir-lang/noir --exclude-pre-releases --json tagName -q 'map(.tagName) | index("$MINIMUM_SUPPORTED_VERSION") as $index | .[0:$index+1]')
           echo "versions=$VERSIONS"
           echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   test:
     needs: [noir-version-list]
