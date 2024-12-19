@@ -10,7 +10,7 @@ For example usage see `test.nr`
 
 ## Noir version compatibility
 
-This library is tested with all stable releases from Noir v0.37.0.
+This library is tested with all Noir stable releases from v0.37.0.
 
 ## Benchmarks
 
