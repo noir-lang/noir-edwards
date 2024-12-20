@@ -2,6 +2,7 @@ use crate::bjj::BabyJubJubParams;
 use crate::Curve;
 use crate::scalar_field::ScalarField;
 
+use crate::CurveTrait;
 use ec::{consts::te::baby_jubjub, tecurve::affine::Point as TEPoint};
 
 type BabyJubJub = Curve<BabyJubJubParams>;
