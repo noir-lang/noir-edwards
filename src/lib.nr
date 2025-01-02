@@ -3,6 +3,7 @@ mod test;
 mod bjj;
 
 pub use crate::scalar_field::ScalarField;
+use std::ops::{Add, Neg, Sub};
 
 pub struct Curve<Params> {
     x: Field,
@@ -23,23 +24,10 @@ trait TECurveParameterTrait {
 }
 
 /// Defines methods that a valid Curve implementation must satisfy
-trait CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::cmp::Eq + std::ops::Neg {
-    fn default() -> Self {
-        std::default::Default::default()
-    }
+trait CurveTrait<Params>: Add + Sub + Eq + Neg + Default {
     fn new(x: Field, y: Field) -> Self;
     fn zero() -> Self;
     fn one() -> Self;
-
-    fn add(self, x: Self) -> Self {
-        self + x
-    }
-    fn sub(self, x: Self) -> Self {
-        self - x
-    }
-    fn neg(self) -> Self {
-        std::ops::Neg::neg(self)
-    }
     fn dbl(self) -> Self;
     fn mul<let NScalarSlices: u32>(self, x: ScalarField<NScalarSlices>) -> Self;
     fn msm<let N: u32, let NScalarSlices: u32>(
