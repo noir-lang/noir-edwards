@@ -324,7 +324,7 @@ impl<Params> Curve<Params> {
         let x2 = other.x;
         let y1 = self.y;
         let y2 = other.y;
-        let (x, y, lambda) = __add_unconstrained(x1, x2, y1, y2, a, d);
+        let (x, y, lambda) = unsafe { __add_unconstrained(x1, x2, y1, y2, a, d) };
         let x1x2 = x1 * x2;
         let x1y2 = x1 * y2;
         std::as_witness(x1x2);
@@ -349,7 +349,7 @@ impl<Params> Curve<Params> {
     fn dbl_internal(self, a: Field, d: Field) -> Self {
         let x1 = self.x;
         let y1 = self.y;
-        let (x3, y3, _) = __add_unconstrained(x1, x1, y1, y1, a, d);
+        let (x3, y3, _) = unsafe { __add_unconstrained(x1, x1, y1, y1, a, d) };
         let x1x1a = x1 * x1 * a;
         std::as_witness(x1x1a);
         // t1 = a*x_1^2 + y_1^2
