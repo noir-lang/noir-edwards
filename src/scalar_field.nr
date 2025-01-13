@@ -46,7 +46,6 @@ unconstrained fn from_wnaf_slices(x: [u8; 64], skew: bool) -> Field {
 
 #[test]
 fn test_wnaf() {
-    /// Safety: test
     unsafe {
         let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
         let (t0, t1) = get_wnaf_slices(result);
@@ -114,7 +113,6 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
             let (plo, phi) = comptime { get_modulus_slices() };
-
             unsafe {
                 // Safety: `borrow`'s value is constrained to be correct by below range constraints.
                 let borrow = get_borrow_flag(plo, lo) as Field;
