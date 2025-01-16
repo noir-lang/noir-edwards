@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/noir-lang/noir-edwards/compare/v0.1.0...v0.1.1) (2025-01-16)
+
+
+### Bug Fixes
+
+* Add necessary unsafe blocks ([#23](https://github.com/noir-lang/noir-edwards/issues/23)) ([dbd41da](https://github.com/noir-lang/noir-edwards/commit/dbd41da8e83607d231f2b7d969a63be7878f38dd))
+
 ## 0.1.0 (2024-12-04)
 
 
