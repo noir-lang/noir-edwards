@@ -83,7 +83,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
     /// (e.g. sum of slices != x + modulus)
     fn from(x: Field) -> Self {
         let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
-        let (slices, skew): ([u8; N], bool) = get_wnaf_slices(x);
+        let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
         result.base4_slices = slices;
         result.skew = skew;
         if (N < 64) {
