@@ -1,9 +1,9 @@
 use crate::bjj::BabyJubJubParams;
 use crate::Curve;
-use crate::scalar_field::ScalarField;
-
 use crate::CurveTrait;
-use ec::{consts::te::baby_jubjub, tecurve::affine::Point as TEPoint};
+use crate::scalar_field::ScalarField;
+use dep::ec::consts::te::baby_jubjub;
+use ec::tecurve::affine::Point as TEPoint;
 
 type BabyJubJub = Curve<BabyJubJubParams>;
 
@@ -14,7 +14,7 @@ fn test_sub() {
     let point: Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
 
     let expected = point + (point + (point));
-    let result = point.dbl().dbl().sub(point);
+    let result = point.dbl().dbl() - point;
     assert(result.x == expected.x);
     assert(result.y == expected.y);
 }
