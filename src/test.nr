@@ -149,7 +149,7 @@ fn test_msm() {
 }
 
 #[test]
-fn test_scalar_field_2() {
+fn test_msm_2() {
     let scalars =
         [ScalarField::<63>::from(1), ScalarField::<63>::from(2), ScalarField::<63>::from(3)];
     let scalar = ScalarField::<63>::from(6);
