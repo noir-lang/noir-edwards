@@ -17,3 +17,5 @@ impl TECurveParameterTrait for BabyJubJubParams {
     }
 }
 pub type BabyJubJub = Curve<BabyJubJubParams>;
+
+
