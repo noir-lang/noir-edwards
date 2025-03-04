@@ -147,3 +147,20 @@ fn test_msm() {
     assert(result.x == expected.x);
     assert(result.y == expected.y);
 }
+
+#[test]
+fn test_scalar_field_2() {
+    let scalars =
+        [ScalarField::<63>::from(1), ScalarField::<63>::from(2), ScalarField::<63>::from(3)];
+    let scalar = ScalarField::<63>::from(6);
+    let point = BabyJubJub { x: BASE8[0], y: BASE8[1] };
+    let points = [
+        BabyJubJub { x: BASE8[0], y: BASE8[1] },
+        BabyJubJub { x: BASE8[0], y: BASE8[1] },
+        BabyJubJub { x: BASE8[0], y: BASE8[1] },
+    ];
+    let result = Curve::msm(points, scalars);
+    let expected = point.mul(scalar);
+    assert(result.x == expected.x);
+    assert(result.y == expected.y);
+}
