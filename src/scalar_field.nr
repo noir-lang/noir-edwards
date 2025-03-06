@@ -85,27 +85,26 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             assert(acc - skew as Field == x);
         } else {
             // TODO: if num bits = 64, validate in sum of the bits is smaller than the Field modulus
-            let mut lo: Field = 0; 
+            let mut lo: Field = 0;
             let mut hi: Field = 0;
-            
+
             for i in 0..32 {
                 lo *= 16;
                 lo += (slices[32 + i] as Field) * 2 - 15;
                 hi *= 16;
                 hi += (slices[i] as Field) * 2 - 15;
             }
-            
+
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-            
+
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-            let borrow = unsafe{get_borrow_flag(PLO, lo) as Field};
-            let rlo = PLO - lo + borrow * TWO_POW_128 -1;  // -1 because we are checking a strict <, not <=
+            let borrow = unsafe { get_borrow_flag(PLO, lo) as Field };
+            let rlo = PLO - lo + borrow * TWO_POW_128 - 1; // -1 because we are checking a strict <, not <=
             let rhi = PHI - hi - borrow;
             // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
             rlo.assert_max_bit_size::<128>();
             rhi.assert_max_bit_size::<128>();
-            
         }
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
