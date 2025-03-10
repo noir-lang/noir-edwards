@@ -97,11 +97,16 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-
+            // the lo might be negative, so we create a flag indicating if it is positive or negative
+            let is_positive: bool =  lo.lt(TWO_POW_128);
+            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (PLO - lo);
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-            let borrow = unsafe { get_borrow_flag(PLO, lo) as Field };
-            let rlo = PLO - lo + borrow * TWO_POW_128 - 1; // -1 because we are checking a strict <, not <=
-            let rhi = PHI - hi - borrow;
+            let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
+            // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO 
+            let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1) + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
+            // is lo is positive, we need to check the hi is less than phi with the borrow flag subtracted
+            // if lo is negative, we have to check that the abstract value of lo has less than 128 bits, and that hi + abs_lo is less than phi
+            let rhi = is_positive as Field * (PHI - hi - borrow) + (1 - is_positive as Field) * (PHI - hi - lo);
             // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
             rlo.assert_max_bit_size::<128>();
             rhi.assert_max_bit_size::<128>();
