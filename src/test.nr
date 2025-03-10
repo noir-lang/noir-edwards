@@ -151,14 +151,11 @@ fn test_msm() {
 
 #[test]
 fn test_scalar_field_regression() {
-
     let x: Field = 0x216b776d574b1fc3b5a87247c240b0aee5f876735930bc682e5f0bd21f52936e;
     println(f"x: {x}");
-    
+
     let scalar_field: ScalarField<64> = ScalarField::<64>::from(x);
     assert(scalar_field.into() == x);
-   
-
 }
 
 #[test]
