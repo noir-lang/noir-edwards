@@ -155,7 +155,7 @@ fn test_scalar_field_regression() {
     println(f"x: {x}");
 
     let scalar_field: ScalarField<64> = ScalarField::<64>::from(x);
-    assert(scalar_field.into() == x);
+    assert(ScalarField::into(scalar_field) == x);
 }
 
 #[test]
