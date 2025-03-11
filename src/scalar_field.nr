@@ -97,21 +97,24 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
             lo -= skew as Field;
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-            // the lo might be negative, so we create a flag indicating if it is positive or negative
-            let is_positive: bool = lo.lt(TWO_POW_128);
+
+            // Safety: `borrow`'s value is constrained to be correct by below range constraints.
+            // Safety: we assert that the absolute value has less than 128 bits
+            let is_positive : bool = unsafe{get_borrow_flag(lo, TWO_POW_128)};
             let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (PLO - lo);
+            abs_lo.assert_max_bit_size::<128>();
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
             let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
-            // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO
-            let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1)
-                + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
+            // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO 
+            let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1) + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
             // is lo is positive, we need to check the hi is less than phi with the borrow flag subtracted
-            // if lo is negative, we have to check that hi * 2^128 < phi * 2^128 + abs_lo + plo
-            // to do this we first make a flag to check that abs_lo + plo is larger than 2^128 or not
-            // if they are larger, we check that hi < phi + 1 and otherwise we check that hi < phi
-            let threshold_flag = (abs_lo + PLO).lt(TWO_POW_128);
-            let rhi = is_positive as Field * (PHI - hi - borrow)
-                + (1 - is_positive as Field) * (PHI - hi - threshold_flag as Field);
+            // if lo is negative, we have to check that hi * 2^128 < phi * 2^128 + abs_lo + plo 
+            // to do this we first make a flag to check that abs_lo + plo is larger than 2^128 or not 
+            // if they are larger, we check that hi < phi + 1 and otherwise we check that hi < phi 
+            // Safety: we assert the when the flag is positive we have less than 128 bits 
+            let threshold_flag : bool = unsafe{get_borrow_flag(abs_lo + PLO, TWO_POW_128)};
+            (threshold_flag as Field * (abs_lo + PLO)).assert_max_bit_size::<128>();
+            let rhi = is_positive as Field * (PHI - hi - borrow) + (1 - is_positive as Field) * (PHI - hi + threshold_flag as Field);
             // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
             rlo.assert_max_bit_size::<128>();
             rhi.assert_max_bit_size::<128>();
