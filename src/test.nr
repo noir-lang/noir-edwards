@@ -1,75 +1,148 @@
-use crate::bjj::BabyJubJubParams;
+use crate::bjj::{BabyJubJub, BabyJubJubParams};
 use crate::Curve;
+use crate::CurveTrait;
 use crate::scalar_field::ScalarField;
 
-use ec::{consts::te::baby_jubjub, tecurve::affine::Point as TEPoint};
-
-type BabyJubJub = Curve<BabyJubJubParams>;
+global BASE8: [Field; 2] = [
+    5299619240641551281634865583518297030282874472190772894086521144482721001553,
+    16950150798460657717958625567821834550301663161624707787222815936182638968203,
+];
 
 #[test]
 fn test_sub() {
-    let bjj = baby_jubjub();
-    let bjj_point = bjj.base8;
-    let point: Curve<BabyJubJubParams> = Curve { x: bjj_point.x, y: bjj_point.y };
-
+    let point: Curve<BabyJubJubParams> = Curve { x: BASE8[0], y: BASE8[1] };
     let expected = point + (point + (point));
-    let result = point.dbl().dbl().sub(point);
+    let result = point.dbl().dbl() - point;
     assert(result.x == expected.x);
     assert(result.y == expected.y);
 }
 
 #[test]
-fn test_mul() {
-    let scalar = 13439285682734681346581734618;
-    let bjj = baby_jubjub();
-    let bjj_point = bjj.base8;
-
-    let expected = bjj.curve.mul(scalar, bjj_point);
+fn test_scalar_mul_1() {
+    let scalar = 9;
+    let bjj_point = BabyJubJub::new(BASE8[0], BASE8[1]);
     let scalar_f: ScalarField<63> = ScalarField::from(scalar);
-    let point: BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
+    let expected = bjj_point.mul(scalar_f);
+    let mut result = bjj_point.dbl().dbl().dbl();
+    result = result + bjj_point;
+    assert(result.x == expected.x);
+    assert(result.y == expected.y);
+}
+
+#[test]
+fn test_scalar_mul_2() {
+    let scalar = 125008707422548553008458566692055115405265404091165231253731979;
+    let point: BabyJubJub = BabyJubJub {
+        x: 0x0bb77a6ad63e739b4eacb2e09d6277c12ab8d8010534e0b62893f3f6bb957051,
+        y: 0x25797203f7a0b24925572e1cd16bf9edfce0051fb9e133774b3c257a872d7d8b,
+    };
+    let scalar_f: ScalarField<63> = ScalarField::from(scalar);
     let result = point.mul(scalar_f);
-    let scalar_converted: Field = ScalarField::into(scalar_f);
-    assert(scalar_converted == scalar);
+    let expected: BabyJubJub = BabyJubJub {
+        x: 617161874567552582384121722828904445762099298246151845490568021290206689792,
+        y: 13034886054222108846214594281471929075849418819835081605284620402790201340104,
+    };
+    assert(result.x == expected.x);
+    assert(result.y == expected.y);
+}
+
+#[test]
+fn test_scalar_mul_3() {
+    let scalar = 54151461856964260907680256125457277518023881635046757770759266;
+    let point: BabyJubJub = BabyJubJub { x: BASE8[0], y: BASE8[1] };
+    let scalar_f: ScalarField<63> = ScalarField::from(scalar);
+    let result = point.mul(scalar_f);
+    let expected: BabyJubJub = BabyJubJub {
+        x: 19208535741451908456059246935738795913108647784428496829884866473148752123890,
+        y: 11995935797001296221514672688383396330912779758746145432661060411923774860388,
+    };
     assert(result.x == expected.x);
     assert(result.y == expected.y);
 }
 
 #[test]
 fn test_msm() {
-    let scalar = 13439285682734681346581734618;
-    let bjj = baby_jubjub();
-    let bjj_point = bjj.base8;
+    let bjj_point = BabyJubJub {
+        x: 0x0bb77a6ad63e739b4eacb2e09d6277c12ab8d8010534e0b62893f3f6bb957051,
+        y: 0x25797203f7a0b24925572e1cd16bf9edfce0051fb9e133774b3c257a872d7d8b,
+    };
 
-    let point: BabyJubJub = Curve { x: bjj_point.x, y: bjj_point.y };
-    let mut scalar_values: [Field; 1] = [0; 1];
-    let mut points: [BabyJubJub; 1] = [Curve { x: 0, y: 0 }; 1];
-    let mut scalars: [ScalarField<63>; 1] = [ScalarField::new(); 1];
-    let mut bjj_points: [TEPoint; 1] = [TEPoint::new(0, 0); 1];
+    let scalars = [
+        ScalarField::<63>::from(1),
+        ScalarField::<63>::from(
+            22096485197410035909796157153320654984986529955857497602977111,
+        ),
+        ScalarField::<63>::from(
+            65246305321293276263364651658295321649030097759571141639656096,
+        ),
+        ScalarField::<63>::from(
+            10783877200430517958910274429249773390381127732782098389956753,
+        ),
+        ScalarField::<63>::from(
+            85115736955169157032026426022325039306882570918771222968894742,
+        ),
+        ScalarField::<63>::from(
+            8007661759673469897619789883995943075483797120112799675116988,
+        ),
+        ScalarField::<63>::from(
+            120632748994973016066965702250208710570048996425404505467379186,
+        ),
+        ScalarField::<63>::from(
+            7880449440789589435266457223958696289620324225124952334738121,
+        ),
+        ScalarField::<63>::from(
+            86393120011600029661131030778522549251804186678072815524194808,
+        ),
+        ScalarField::<63>::from(
+            87733764451921476238239626348847201783164441449836684513847657,
+        ),
+    ];
 
-    points[0] = point;
-    scalar_values[0] = scalar;
-    scalars[0] = ScalarField::from(scalar_values[0]);
-    bjj_points[0] = TEPoint::new(points[0].x, points[0].y);
-
-    for i in 1..1 {
-        points[i] = points[i - 1].dbl();
-        scalar_values[i] = scalar_values[i - 1] + scalar;
-    }
-
-    for i in 0..1 {
-        scalars[i] = ScalarField::from(scalar_values[i]);
-        bjj_points[i] = TEPoint::new(points[i].x, points[i].y);
-        let scalar_expected = scalar_values[i];
-        let scalar_result: Field = ScalarField::into(scalars[i]);
-        assert(scalar_result == scalar_expected);
-
-        let result_point = points[i].mul(scalars[i]);
-        let expected_point = bjj.curve.mul(scalar_values[i], bjj_points[i]);
-        assert(result_point.x == expected_point.x);
-        assert(result_point.y == expected_point.y);
-    }
-    let expected = bjj.curve.msm(scalar_values, bjj_points);
+    let points = [
+        bjj_point,
+        BabyJubJub {
+            x: 6908307910410799727742014631870645132468849638438785192023894233964747648246,
+            y: 1117247569715206928008211232281782362917630199461454595461800473556215015531,
+        },
+        BabyJubJub {
+            x: 20961750243890720535629167040809652791859594413096044973136607904650832264730,
+            y: 3667872899218539236578732091671023586522699998168411741204352569314950923203,
+        },
+        BabyJubJub {
+            x: 9242845010005317730554303618656955152057106587627235401784820451786543272328,
+            y: 8361223956059552338001832638570050886817197127330309519914796154028334872651,
+        },
+        BabyJubJub {
+            x: 14695455247551978427572444624408674826222153759343114431423847408522503291511,
+            y: 17083718747713825481233561791146947590762250218126109450127826273602275602945,
+        },
+        BabyJubJub {
+            x: 12651252941938248665893806292608903013146642645301298232801488188791583313284,
+            y: 2696575039526434571211651150692815966656551007520222995710428115207480112887,
+        },
+        BabyJubJub {
+            x: 7851198486663817094882669094016375866490899059694847247154885216608493354280,
+            y: 13029415159272931747874822423922297641162291322751711599799454751602691242083,
+        },
+        BabyJubJub {
+            x: 17157209920272988621763172574968463086712340171272077002499355712694599831919,
+            y: 21429257232797467406552146211729253324737611878355163665519157983173871945271,
+        },
+        BabyJubJub {
+            x: 10126291830257109041882984305316110558514650221195031244344949855101922260578,
+            y: 7356838874813998377349355063760749355414350391995970274536579749579154432749,
+        },
+        BabyJubJub {
+            x: 16373445850576846598377550621753030487980229051510483964934158889959117451333,
+            y: 571457541426255272935595262428513985863469854864356275416794825997199661466,
+        },
+    ];
     let result = Curve::msm(points, scalars);
+
+    let expected = BabyJubJub {
+        x: 0x2d4030b35ef0c22ec905ac20f5292c4484a236f70171b41dd4384081c6a53617,
+        y: 0x19a88b791ce81b6181d10e87c81cf962757129dd4da39b13529e32ece9015e05,
+    };
 
     assert(result.x == expected.x);
     assert(result.y == expected.y);

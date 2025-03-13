@@ -3,6 +3,7 @@ mod test;
 mod bjj;
 
 pub use crate::scalar_field::ScalarField;
+use std::ops::{Add, Neg, Sub};
 
 pub struct Curve<Params> {
     x: Field,
@@ -23,23 +24,10 @@ trait TECurveParameterTrait {
 }
 
 /// Defines methods that a valid Curve implementation must satisfy
-trait CurveTrait<Params>: std::ops::Add + std::ops::Sub + std::cmp::Eq + std::ops::Neg {
-    fn default() -> Self {
-        std::default::Default::default()
-    }
+trait CurveTrait<Params>: Add + Sub + Eq + Neg + Default {
     fn new(x: Field, y: Field) -> Self;
     fn zero() -> Self;
     fn one() -> Self;
-
-    fn add(self, x: Self) -> Self {
-        self + x
-    }
-    fn sub(self, x: Self) -> Self {
-        self - x
-    }
-    fn neg(self) -> Self {
-        std::ops::Neg::neg(self)
-    }
     fn dbl(self) -> Self;
     fn mul<let NScalarSlices: u32>(self, x: ScalarField<NScalarSlices>) -> Self;
     fn msm<let N: u32, let NScalarSlices: u32>(
@@ -336,7 +324,7 @@ impl<Params> Curve<Params> {
         let x2 = other.x;
         let y1 = self.y;
         let y2 = other.y;
-        let (x, y, lambda) = __add_unconstrained(x1, x2, y1, y2, a, d);
+        let (x, y, lambda) = unsafe { __add_unconstrained(x1, x2, y1, y2, a, d) };
         let x1x2 = x1 * x2;
         let x1y2 = x1 * y2;
         std::as_witness(x1x2);
@@ -361,7 +349,7 @@ impl<Params> Curve<Params> {
     fn dbl_internal(self, a: Field, d: Field) -> Self {
         let x1 = self.x;
         let y1 = self.y;
-        let (x3, y3, _) = __add_unconstrained(x1, x1, y1, y1, a, d);
+        let (x3, y3, _) = unsafe { __add_unconstrained(x1, x1, y1, y1, a, d) };
         let x1x1a = x1 * x1 * a;
         std::as_witness(x1x1a);
         // t1 = a*x_1^2 + y_1^2
