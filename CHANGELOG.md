@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/noir-lang/noir-edwards/compare/v0.1.1...v0.2.0) (2025-03-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump minimum noir version to 1.0.0-beta.0 ([#27](https://github.com/noir-lang/noir-edwards/issues/27))
+
+### Bug Fixes
+
+* Add missing trait imports ([#26](https://github.com/noir-lang/noir-edwards/issues/26)) ([e986b2f](https://github.com/noir-lang/noir-edwards/commit/e986b2f9adcd4856bf3ec2bd3fe61e377170226c))
+* Fixed the bug in `from::&lt;Field&gt;` ([#33](https://github.com/noir-lang/noir-edwards/issues/33)) ([c455407](https://github.com/noir-lang/noir-edwards/commit/c4554075e0f4d3c8b1af2a3b13bca5190985c0a9))
+
+
+### Miscellaneous Chores
+
+* Bump minimum noir version to 1.0.0-beta.0 ([#27](https://github.com/noir-lang/noir-edwards/issues/27)) ([2b76c43](https://github.com/noir-lang/noir-edwards/commit/2b76c437f0d58f3f7153fbcddd0f03c26b88e090))
+
 ## [0.1.1](https://github.com/noir-lang/noir-edwards/compare/v0.1.0...v0.1.1) (2025-01-16)
 
 
