@@ -1,8 +1,9 @@
 use crate::bjj::{BabyJubJub, BabyJubJubParams};
 use crate::Curve;
 use crate::CurveTrait;
-use crate::scalar_field::ScalarField;
+use crate::scalar_field::{PHI, PLO, ScalarField, TWO_POW_128};
 
+pub global TWO_POW_252: Field = 0x1000000000000000000000000000000000000000000000000000000000000000;
 global BASE8: [Field; 2] = [
     5299619240641551281634865583518297030282874472190772894086521144482721001553,
     16950150798460657717958625567821834550301663161624707787222815936182638968203,
@@ -146,4 +147,18 @@ fn test_msm() {
 
     assert(result.x == expected.x);
     assert(result.y == expected.y);
+}
+
+#[test]
+fn test_scalar_field_regression() {
+    let x: Field = 0x216b776d574b1fc3b5a87247c240b0aee5f876735930bc682e5f0bd21f52936e;
+    let scalar_field: ScalarField<64> = ScalarField::<64>::from(x);
+    assert(ScalarField::into(scalar_field) == x);
+}
+
+#[test]
+fn test_globals() {
+    PLO.assert_max_bit_size::<128>();
+    PHI.assert_max_bit_size::<128>();
+    assert(PLO + PHI * TWO_POW_128 == 0);
 }

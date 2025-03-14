@@ -11,8 +11,8 @@ impl TECurveParameterTrait for BabyJubJubParams {
     }
     fn gen() -> (Field, Field) {
         (
-            0x0bb77a6ad63e739b4eacb2e09d6277c12ab8d8010534e0b62893f3f6bb957051,
-            0x25797203f7a0b24925572e1cd16bf9edfce0051fb9e133774b3c257a872d7d8b,
+            0x023343e3445b673d38bcba38f25645adb494b1255b1162bb40f41a59f4d4b45e,
+            0x0c19139cb84c680a6e14116da06056174a0cfa121e6e5c2450f87d64fc000001,
         )
     }
 }
