@@ -101,7 +101,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
             // Safety: we assert that the absolute value has less than 128 bits
             let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
-            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (PLO - lo);
+            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (- lo);
             abs_lo.assert_max_bit_size::<128>();
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
             let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
