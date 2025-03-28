@@ -160,6 +160,6 @@ fn test_wnaf() {
 fn test_regression_wnaf() {
     let a = 0x7b;
     let s: ScalarField<64> = ScalarField::<64>::from(a);
-    let b: Field = s.into();
+    let b: Field = ScalarField::<64>::into(s);
     assert_eq(a, b);
 }
