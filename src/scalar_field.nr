@@ -50,16 +50,6 @@ unconstrained fn from_wnaf_slices<let N: u32>(x: [u8; N], skew: bool) -> Field {
     result
 }
 
-#[test]
-fn test_wnaf() {
-    unsafe {
-        let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-        let (t0, t1) = get_wnaf_slices::<64>(result);
-        let expected = from_wnaf_slices(t0, t1);
-        assert(result == expected);
-    }
-}
-
 unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
     lhs_lo.lt(rhs_lo + 1)
 }
@@ -101,7 +91,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
             // Safety: we assert that the absolute value has less than 128 bits
             let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
-            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (PLO - lo);
+
+            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (-lo);
+
             abs_lo.assert_max_bit_size::<128>();
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
             let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
@@ -152,4 +144,22 @@ impl<let N: u32> ScalarField<N> {
     fn get(self, idx: u64) -> u8 {
         self.base4_slices[idx]
     }
+}
+
+#[test]
+fn test_wnaf() {
+    unsafe {
+        let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
+        let (t0, t1) = get_wnaf_slices::<64>(result);
+        let expected = from_wnaf_slices(t0, t1);
+        assert(result == expected);
+    }
+}
+
+#[test]
+fn test_regression_wnaf() {
+    let a = 0x7b;
+    let s: ScalarField<64> = ScalarField::<64>::from(a);
+    let b: Field = ScalarField::<64>::into(s);
+    assert_eq(a, b);
 }
