@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/noir-lang/noir-edwards/compare/v0.2.0...v0.2.1) (2025-03-28)
+
+
+### Bug Fixes
+
+* Fixed the absolute value being computed wrong ([#35](https://github.com/noir-lang/noir-edwards/issues/35)) ([3762a22](https://github.com/noir-lang/noir-edwards/commit/3762a22fb9c6174cf8169c88bace8b08724fcee2))
+
 ## [0.2.0](https://github.com/noir-lang/noir-edwards/compare/v0.1.1...v0.2.0) (2025-03-14)
 
 
