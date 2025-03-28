@@ -50,16 +50,6 @@ unconstrained fn from_wnaf_slices<let N: u32>(x: [u8; N], skew: bool) -> Field {
     result
 }
 
-#[test]
-fn test_wnaf() {
-    unsafe {
-        let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-        let (t0, t1) = get_wnaf_slices::<64>(result);
-        let expected = from_wnaf_slices(t0, t1);
-        assert(result == expected);
-    }
-}
-
 unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
     lhs_lo.lt(rhs_lo + 1)
 }
@@ -154,4 +144,20 @@ impl<let N: u32> ScalarField<N> {
     fn get(self, idx: u64) -> u8 {
         self.base4_slices[idx]
     }
+}
+
+#[test]
+fn test_wnaf() {
+    unsafe {
+        let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
+        let (t0, t1) = get_wnaf_slices::<64>(result);
+        let expected = from_wnaf_slices(t0, t1);
+        assert(result == expected);
+    }
+}
+
+#[test]
+fn test_regression_wnaf() {
+    let a = 0x7b;
+    let _: ScalarField<64> = ScalarField::<64>::from(a);
 }
