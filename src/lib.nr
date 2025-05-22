@@ -221,7 +221,7 @@ where
         let (table_x, table_y): ([Field; 16], [Field; 16]) = self.compute_straus_point_table(a, d);
 
         // Initialize the accumulator with the point that maps to the first (most significant) scalar slice
-        let idx = scalar.base4_slices[0];
+        let idx = scalar.base4_slices[0] as u32;
         let mut accumulator: Self = Curve { x: table_x[idx], y: table_y[idx] };
 
         // Execute a double-and-add subroutine
@@ -234,7 +234,7 @@ where
             accumulator = accumulator.dbl_internal(a, d);
             accumulator = accumulator.dbl_internal(a, d);
             accumulator = accumulator.dbl_internal(a, d);
-            let idx: u8 = scalar.base4_slices[i];
+            let idx = scalar.base4_slices[i] as u32;
             let x = table_x[idx];
             let y = table_y[idx];
             accumulator = accumulator.add_internal(Curve { x, y }, a, d);
@@ -279,10 +279,10 @@ where
             point_tables[j] = points[j].compute_straus_point_table(a, d);
         }
 
-        let idx = scalars[0].base4_slices[0];
+        let idx = scalars[0].base4_slices[0] as u32;
         let mut accumulator: Self = Curve { x: point_tables[0].0[idx], y: point_tables[0].1[idx] };
         for j in 1..N {
-            let idx = scalars[j].base4_slices[0];
+            let idx = scalars[j].base4_slices[0] as u32;
             let P = Curve { x: point_tables[j].0[idx], y: point_tables[j].1[idx] };
             accumulator = accumulator.add_internal(P, a, d);
         }
@@ -292,7 +292,7 @@ where
             accumulator = accumulator.dbl_internal(a, d);
             accumulator = accumulator.dbl_internal(a, d);
             for j in 0..N {
-                let idx: u8 = scalars[j].base4_slices[i];
+                let idx = scalars[j].base4_slices[i] as u32;
                 let x = point_tables[j].0[idx];
                 let y = point_tables[j].1[idx];
                 accumulator = accumulator.add_internal(Curve { x, y }, a, d);

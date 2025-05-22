@@ -141,7 +141,7 @@ impl<let N: u32> ScalarField<N> {
     pub fn new() -> Self {
         Self { base4_slices: [0; N], skew: false }
     }
-    fn get(self, idx: u64) -> u8 {
+    fn get(self, idx: u32) -> u8 {
         self.base4_slices[idx]
     }
 }
