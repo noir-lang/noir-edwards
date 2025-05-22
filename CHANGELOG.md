@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/noir-lang/noir-edwards/compare/v0.2.1...v0.2.2) (2025-05-22)
+
+
+### Bug Fixes
+
+* Always use u32 to index arrays ([#38](https://github.com/noir-lang/noir-edwards/issues/38)) ([557245f](https://github.com/noir-lang/noir-edwards/commit/557245f4c3b0c7c394ea0812584fd8b333936174))
+
 ## [0.2.1](https://github.com/noir-lang/noir-edwards/compare/v0.2.0...v0.2.1) (2025-03-28)
 
 
