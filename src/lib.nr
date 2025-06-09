@@ -210,8 +210,6 @@ where
     ///      4: 126 table reads with runtime index (252 gates)
     ///
     /// Cost: 2122 gates + cost of creating ScalarField (110 gates)
-    ///
-    /// TODO: use windowed non-adjacent form to remove 7 point additions when creating lookup table
     fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
         // define a, d params locally to make code more readable (shouldn't affect performance)
         let a = Params::a();
@@ -264,8 +262,6 @@ where
     ///      1. 252 point doublings 1260 gates
     ///
     /// Cost: 1260 + 862N + cost of creating ScalarField (110N gates)
-    ///
-    /// TODO: use windowed non-adjacent form to remove 7 point additions per point when creating lookup table
     fn msm<let N: u32, let NScalarSlices: u32>(
         points: [Self; N],
         scalars: [ScalarField<NScalarSlices>; N],
@@ -396,8 +392,6 @@ impl<Params> Curve<Params> {
     ///      2: 15 point additions (7 * 5 = 105)
     ///
     /// Total Cost: 169 gates
-    ///
-    /// TODO: use windowed non-adjacent form to remove 8 point additions
     fn compute_straus_point_table(self, a: Field, d: Field) -> ([Field; 16], [Field; 16]) {
         let mut table_x: [Field; 16] = [0; 16];
         let mut table_y: [Field; 16] = [0; 16];
