@@ -6,8 +6,8 @@ pub use crate::scalar_field::ScalarField;
 use std::ops::{Add, Neg, Sub};
 
 pub struct Curve<Params> {
-    x: Field,
-    y: Field,
+    pub x: Field,
+    pub y: Field,
 }
 
 // ####################################################################################################################
@@ -24,7 +24,7 @@ trait TECurveParameterTrait {
 }
 
 /// Defines methods that a valid Curve implementation must satisfy
-trait CurveTrait<Params>: Add + Sub + Eq + Neg + Default {
+pub trait CurveTrait<Params>: Add + Sub + Eq + Neg + Default {
     fn new(x: Field, y: Field) -> Self;
     fn zero() -> Self;
     fn one() -> Self;
