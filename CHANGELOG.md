@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/noir-lang/noir-edwards/compare/v0.2.2...v0.2.3) (2025-07-15)
+
+
+### Bug Fixes
+
+* Don't use private to_le_radix from stdlib ([#40](https://github.com/noir-lang/noir-edwards/issues/40)) ([9ff020e](https://github.com/noir-lang/noir-edwards/commit/9ff020e88464f54027717ddb585ef24cf8b4aa2a))
+* Make some items public ([#41](https://github.com/noir-lang/noir-edwards/issues/41)) ([022fb10](https://github.com/noir-lang/noir-edwards/commit/022fb107c36d73c71374ef037bb8a80b53a5aaf6))
+
 ## [0.2.2](https://github.com/noir-lang/noir-edwards/compare/v0.2.1...v0.2.2) (2025-05-22)
 
 
