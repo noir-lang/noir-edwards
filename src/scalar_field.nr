@@ -23,7 +23,7 @@ pub struct ScalarField<let N: u32> {
 
 unconstrained fn get_wnaf_slices<let N: u32>(x: Field) -> ([u8; N], bool) {
     let mut result: [u8; N] = [0; N];
-    let mut nibbles: [u8; N] = x.to_le_radix(16);
+    let mut nibbles: [u8; N] = to_le_radix_16(x);
 
     let skew: bool = nibbles[0] & 1 == 0;
     nibbles[0] += skew as u8;
@@ -53,6 +53,17 @@ unconstrained fn from_wnaf_slices<let N: u32>(x: [u8; N], skew: bool) -> Field {
 unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
     lhs_lo.lt(rhs_lo + 1)
 }
+
+unconstrained fn to_le_radix_16<let N: u32>(value: Field) -> [u8; N] {
+    let bytes = value.to_le_bytes::<N / 2>();
+    let mut result: [u8; N] = [0; N];
+    for index in 0..bytes.len() {
+        result[index * 2] = bytes[index] & 0x0F; // Extract low nibble (bits 0-3)
+        result[index * 2 + 1] = (bytes[index] >> 4); // Extract high nibble (bits 4-7)
+    }
+    result
+}
+
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
     /// Construct from a field element
