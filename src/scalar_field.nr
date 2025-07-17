@@ -55,11 +55,18 @@ unconstrained fn get_borrow_flag(lhs_lo: Field, rhs_lo: Field) -> bool {
 }
 
 unconstrained fn to_le_radix_16<let N: u32>(value: Field) -> [u8; N] {
-    let bytes = value.to_le_bytes::<N / 2>();
+    // Round up on odd values of `N` to ensure space for last nibble.
+    let bytes = value.to_le_bytes::<(N + 1) / 2>();
     let mut result: [u8; N] = [0; N];
-    for index in 0..bytes.len() {
+    for index in 0..(N / 2) {
         result[index * 2] = bytes[index] & 0x0F; // Extract low nibble (bits 0-3)
         result[index * 2 + 1] = (bytes[index] >> 4); // Extract high nibble (bits 4-7)
+    }
+    if (N & 1) == 1 {
+        let last_nibble = bytes[bytes.len() - 1];
+        // The last byte must have the top 4 bits empty.
+        (last_nibble as Field).assert_max_bit_size::<4>();
+        result[N - 1] = last_nibble;
     }
     result
 }
@@ -158,13 +165,11 @@ impl<let N: u32> ScalarField<N> {
 }
 
 #[test]
-fn test_wnaf() {
-    unsafe {
-        let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-        let (t0, t1) = get_wnaf_slices::<64>(result);
-        let expected = from_wnaf_slices(t0, t1);
-        assert(result == expected);
-    }
+unconstrained fn test_wnaf() {
+    let result: Field = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
+    let (t0, t1) = get_wnaf_slices::<64>(result);
+    let expected = from_wnaf_slices(t0, t1);
+    assert_eq(result, expected);
 }
 
 #[test]
@@ -173,4 +178,11 @@ fn test_regression_wnaf() {
     let s: ScalarField<64> = ScalarField::<64>::from(a);
     let b: Field = ScalarField::<64>::into(s);
     assert_eq(a, b);
+}
+
+#[test]
+unconstrained fn to_le_radix_16_works_with_odd_N() {
+    let input = 0x0f00;
+    let nibbles: [u8; 3] = to_le_radix_16(input);
+    assert_eq(nibbles, [0x0, 0x0, 0xf]);
 }
