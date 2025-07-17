@@ -185,5 +185,5 @@ fn test_regression_wnaf() {
 unconstrained fn to_le_radix_16_works_with_odd_N() {
     let input = 0x0f00;
     let nibbles: [u8; 3] = to_le_radix_16(input);
-    assert_eq(nibbles, [0x0, 0x0, 0xf])
+    assert_eq(nibbles, [0x0, 0x0, 0xf]);
 }
