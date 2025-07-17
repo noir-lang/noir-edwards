@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/noir-lang/noir-edwards/compare/v0.2.3...v0.2.4) (2025-07-17)
+
+
+### Bug Fixes
+
+* Fix `to_le_radix_16` ([#43](https://github.com/noir-lang/noir-edwards/issues/43)) ([c4f4dfe](https://github.com/noir-lang/noir-edwards/commit/c4f4dfe838df5f65b935715ef350b861240370e3))
+
 ## [0.2.3](https://github.com/noir-lang/noir-edwards/compare/v0.2.2...v0.2.3) (2025-07-15)
 
 
