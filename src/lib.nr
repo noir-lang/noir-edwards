@@ -1,6 +1,6 @@
 mod scalar_field;
 mod test;
-mod bjj;
+pub mod bjj;
 
 pub use crate::scalar_field::ScalarField;
 use std::ops::{Add, Neg, Sub};
