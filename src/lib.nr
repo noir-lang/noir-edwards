@@ -362,6 +362,7 @@ impl<Params> Curve<Params> {
         // i.e. x_3 = 2 * x_1 * y_1 / (y_1^2 + a * x_1^2)
         let t2 = x3 * t1 - t4;
         assert(t2 == t4);
+        assert(lambda == t4 * t4);
         Self { x: x3, y: y3 }
     }
 
