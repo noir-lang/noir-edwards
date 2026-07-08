@@ -104,6 +104,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             }
 
             lo -= skew as Field;
+            assert(hi * TWO_POW_128 + lo == x); // constrain the reconstruction to x (analogous to the N < 64 branch)
             // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
 
             // Safety: `borrow`'s value is constrained to be correct by below range constraints.
