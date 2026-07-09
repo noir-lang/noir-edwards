@@ -130,6 +130,12 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
             rlo.assert_max_bit_size::<128>();
             rhi.assert_max_bit_size::<128>();
+
+            // Bind the wNAF slices to the input, as the N < 64 branch does via `acc - skew == x`. The reconstructed
+            // value is `hi * 2^128 + lo` (lo already has skew subtracted); the range checks above force it below
+            // the modulus, so this equality uniquely determines the slices from x. Without it the N == 64
+            // decomposition is a free witness.
+            assert(hi * TWO_POW_128 + lo == x);
         }
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
