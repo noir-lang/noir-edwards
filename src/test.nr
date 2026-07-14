@@ -9,6 +9,16 @@ global BASE8: [Field; 2] = [
     16950150798460657717958625567821834550301663161624707787222815936182638968203,
 ];
 
+// msm shares mul's incomplete twisted-Edwards addition degeneracy (off-curve inputs can free x3/y3); the
+// on-curve gate at msm entry rejects an off-curve input. Honest msm is unaffected (test_msm).
+#[test(should_fail)]
+fn msm_rejects_offcurve() {
+    let points: [BabyJubJub; 2] =
+        [BabyJubJub { x: BASE8[0], y: BASE8[1] }, BabyJubJub { x: 0, y: 0 }];
+    let scalars: [ScalarField<63>; 2] = [ScalarField::from(5), ScalarField::from(5)];
+    let _ = Curve::msm(points, scalars);
+}
+
 #[test]
 fn test_sub() {
     let point: Curve<BabyJubJubParams> = Curve { x: BASE8[0], y: BASE8[1] };
