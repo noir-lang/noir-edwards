@@ -269,6 +269,11 @@ where
         let a = Params::a();
         let d = Params::d();
 
+        // Reject off-curve inputs (mirrors `mul`'s guard) so the incomplete-addition degeneracy is unreachable.
+        for j in 0..N {
+            points[j].assert_is_on_curve();
+        }
+
         // Generalized version of `mul` for multiple points.
         let mut point_tables: [([Field; 16], [Field; 16]); N] = [([0; 16], [0; 16]); N];
         for j in 0..N {
