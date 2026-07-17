@@ -9,6 +9,53 @@ global BASE8: [Field; 2] = [
     16950150798460657717958625567821834550301663161624707787222815936182638968203,
 ];
 
+// The doubling and addition under-constraints are reachable only by off-curve inputs: (0,0) frees x3 (t1 = 0),
+// and the family x^2 = 1/a, y = 1 frees y3 (t1 = 2). The on-curve gate at the `mul` entry rejects both; honest
+// scalar muls still pass (test_scalar_mul_*, test_msm).
+#[test(should_fail)]
+fn mul_rejects_offcurve_origin() {
+    let p: BabyJubJub = BabyJubJub { x: 0, y: 0 };
+    let s: ScalarField<63> = ScalarField::from(5);
+    let _ = p.mul(s);
+}
+
+#[test(should_fail)]
+fn mul_rejects_offcurve_y3_free() {
+    let p: BabyJubJub = BabyJubJub {
+        x: 0x29da35670cdb640a2b6e763c0012aba803937ddf46736ee7b8e2b15b9d51c107,
+        y: 1,
+    };
+    let s: ScalarField<63> = ScalarField::from(5);
+    let _ = p.mul(s);
+}
+
+#[test]
+fn new_accepts_on_curve() {
+    let _ = BabyJubJub::new(BASE8[0], BASE8[1]);
+}
+
+#[test(should_fail)]
+fn new_rejects_offcurve_origin() {
+    let _ = BabyJubJub::new(0, 0);
+}
+
+#[test(should_fail)]
+fn new_rejects_offcurve_y3_free() {
+    let _ = BabyJubJub::new(0x29da35670cdb640a2b6e763c0012aba803937ddf46736ee7b8e2b15b9d51c107, 1);
+}
+
+// The N == 64 branch now binds the wNAF slices to the input. Completeness: for a value that fits both widths,
+// ScalarField<64> and ScalarField<63> reconstruct the same scalar, so multiplying a point by each is equal.
+#[test]
+fn scalarfield_n64_matches_n63() {
+    let k: Field = 0x1234567890abcdef1234567890abcdef1234567890abcdef;
+    let p8 = BabyJubJub::new(BASE8[0], BASE8[1]);
+    let via63 = p8.mul(ScalarField::<63>::from(k));
+    let via64 = p8.mul(ScalarField::<64>::from(k));
+    assert(via63.x == via64.x);
+    assert(via63.y == via64.y);
+}
+
 #[test]
 fn test_sub() {
     let point: Curve<BabyJubJubParams> = Curve { x: BASE8[0], y: BASE8[1] };
