@@ -131,6 +131,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             rlo.assert_max_bit_size::<128>();
             rhi.assert_max_bit_size::<128>();
 
+            // hi must also be non-negative: a negative hi encodes x - p, which the equality below cannot catch
+            hi.assert_max_bit_size::<128>();
+
             // Bind the wNAF slices to the input, as the N < 64 branch does via `acc - skew == x`. The reconstructed
             // value is `hi * 2^128 + lo` (lo already has skew subtracted); the range checks above force it below
             // the modulus, so this equality uniquely determines the slices from x. Without it the N == 64
@@ -191,4 +194,71 @@ unconstrained fn to_le_radix_16_works_with_odd_N() {
     let input = 0x0f00;
     let nibbles: [u8; 3] = to_le_radix_16(input);
     assert_eq(nibbles, [0x0, 0x0, 0xf]);
+}
+
+// mirrors the constrained N == 64 body of `from`, which takes its slices from a hint a test cannot control
+fn n64_canonical_checks(slices: [u8; 64], skew: bool, x: Field) {
+    let mut lo: Field = 0;
+    let mut hi: Field = 0;
+
+    for i in 0..32 {
+        lo *= 16;
+        lo += (slices[32 + i] as Field) * 2 - 15;
+        hi *= 16;
+        hi += (slices[i] as Field) * 2 - 15;
+    }
+
+    lo -= skew as Field;
+
+    // Safety: mirrors `from`; the range constraints below bind these hints.
+    let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
+    let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (-lo);
+    abs_lo.assert_max_bit_size::<128>();
+    // Safety: mirrors `from`; bound by the range constraints below.
+    let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
+    let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1)
+        + (1 - is_positive as Field) * (-lo);
+    // Safety: mirrors `from`; bound by the range constraint below.
+    let threshold_flag: bool = unsafe { get_borrow_flag(abs_lo + PLO, TWO_POW_128) };
+    (threshold_flag as Field * (abs_lo + PLO)).assert_max_bit_size::<128>();
+    let rhi = is_positive as Field * (PHI - hi - borrow)
+        + (1 - is_positive as Field) * (PHI - hi + threshold_flag as Field);
+    rlo.assert_max_bit_size::<128>();
+    rhi.assert_max_bit_size::<128>();
+
+    hi.assert_max_bit_size::<128>();
+
+    assert(hi * TWO_POW_128 + lo == x);
+
+    for i in 0..64 {
+        (slices[i] as Field).assert_max_bit_size::<4>();
+    }
+}
+
+// slices encoding the integer 7 - p; over the field 7 - p == 7, so only the hi bound rejects them
+global X_MINUS_P_SLICES: [u8; 64] = [
+    6, 7, 12, 13, 13, 8, 12, 6, 8, 15, 6, 7, 2, 15, 14, 11, 2, 3, 13, 7, 13, 13, 2, 4, 11, 15, 3,
+    15, 5, 3, 13, 1, 6, 11, 14, 6, 0, 11, 13, 11, 12, 3, 2, 3, 4, 7, 11, 7, 5, 14, 0, 15, 0, 5, 3,
+    6, 0, 8, 0, 0, 0, 0, 0, 3,
+];
+
+#[test(should_fail)]
+fn n64_rejects_negative_representative() {
+    n64_canonical_checks(X_MINUS_P_SLICES, true, 7);
+}
+
+#[test]
+fn n64_replica_accepts_honest_slices() {
+    let x: Field = 7;
+    // Safety: honest hint, bound by the checks under test.
+    let (slices, skew): ([u8; 64], bool) = unsafe { get_wnaf_slices(x) };
+    n64_canonical_checks(slices, skew, x);
+}
+
+#[test]
+fn n64_accepts_honest_scalar_through_from() {
+    let x: Field = 7;
+    let s: ScalarField<64> = ScalarField::<64>::from(x);
+    let back: Field = ScalarField::<64>::into(s);
+    assert_eq(back, x);
 }
