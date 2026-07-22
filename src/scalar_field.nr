@@ -193,8 +193,6 @@ unconstrained fn to_le_radix_16_works_with_odd_N() {
 
 #[test]
 fn regression_from_zero_is_provable() {
-    // Honest decomposition of 0 is hi = 1, lo = -2^128, so abs_lo = 2^128 and
-    // `abs_lo.assert_max_bit_size::<128>()` fails.
     let a: Field = 0;
     let s: ScalarField<64> = ScalarField::<64>::from(a);
     assert_eq(ScalarField::<64>::into(s), a);
@@ -202,8 +200,6 @@ fn regression_from_zero_is_provable() {
 
 #[test]
 fn regression_from_low_limb_equal_plo_is_provable() {
-    // Any x with (x mod 2^128) == PLO drives abs_lo + PLO == 2^128 exactly, which
-    // fails `(threshold_flag * (abs_lo + PLO)).assert_max_bit_size::<128>()`.
     let a: Field = PLO;
     let s: ScalarField<64> = ScalarField::<64>::from(a);
     assert_eq(ScalarField::<64>::into(s), a);
@@ -211,8 +207,7 @@ fn regression_from_low_limb_equal_plo_is_provable() {
 
 #[test(should_fail)]
 fn regression_negative_hi_decomposition_is_rejected() {
-    // Malicious hint: hi = -1, lo = 1 => V = hi*2^128 + lo = -(2^128 - 1) = x - p,
-    // a non-canonical (negative) integer. Reachable from valid 4-bit slices.
+    // Make sure that a negative `hi` fails
     let hi: Field = -1;
     let lo: Field = 1;
     let x: Field = hi * TWO_POW_128 + lo; // = p - (2^128 - 1)
