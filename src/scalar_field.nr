@@ -71,6 +71,47 @@ unconstrained fn to_le_radix_16<let N: u32>(value: Field) -> [u8; N] {
     result
 }
 
+/// Constrain a two-limb wNAF decomposition `(hi, lo)` (`lo` already skew-adjusted) to
+/// represent exactly the input scalar `x`, used by `From<Field>` when `N >= 64`.
+///
+/// Two properties are enforced:
+/// 1. Binding: the value represented by the prover-supplied slices, reduced modulo the
+///    field, equals `x`. Without this the slices are free to encode any scalar,
+///    decoupling the result from `x` (this is the analogue of the `assert(acc - skew == x)`
+///    check in the `N < 64` branch).
+/// 2. Canonicity: the integer represented by `(hi, lo)` is smaller than the field modulus
+///    `(PHI, PLO)`, ruling out non-canonical decompositions (e.g. `x + p`) that also reduce
+///    to `x`.
+fn assert_wnaf_decomposition_binds(hi: Field, lo: Field, x: Field) {
+    assert(hi * TWO_POW_128 + lo == x);
+    // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
+
+    // Safety: `borrow`'s value is constrained to be correct by below range constraints.
+    // Safety: we assert that the absolute value has less than 128 bits
+    let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
+
+    let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (-lo);
+
+    abs_lo.assert_max_bit_size::<128>();
+    // Safety: `borrow`'s value is constrained to be correct by below range constraints.
+    let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
+    // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO
+    let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1)
+        + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
+    // is lo is positive, we need to check the hi is less than phi with the borrow flag subtracted
+    // if lo is negative, we have to check that hi * 2^128 < phi * 2^128 + abs_lo + plo
+    // to do this we first make a flag to check that abs_lo + plo is larger than 2^128 or not
+    // if they are larger, we check that hi < phi + 1 and otherwise we check that hi < phi
+    // Safety: we assert the when the flag is positive we have less than 128 bits
+    let threshold_flag: bool = unsafe { get_borrow_flag(abs_lo + PLO, TWO_POW_128) };
+    (threshold_flag as Field * (abs_lo + PLO)).assert_max_bit_size::<128>();
+    let rhi = is_positive as Field * (PHI - hi - borrow)
+        + (1 - is_positive as Field) * (PHI - hi + threshold_flag as Field);
+    // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
+    rlo.assert_max_bit_size::<128>();
+    rhi.assert_max_bit_size::<128>();
+}
+
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
     /// Construct from a field element
@@ -103,38 +144,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             }
 
             lo -= skew as Field;
-            // Bind the decomposition to the input: the value represented by the prover-supplied
-            // slices, reduced modulo the field, must equal `x`. Without this the slices are free to
-            // encode any scalar, decoupling the result from `x` (this is the analogue of the
-            // `assert(acc - skew == x)` check in the `N < 64` branch). The range check below then
-            // rules out non-canonical decompositions (e.g. `x + p`) that also reduce to `x`.
-            assert(hi * TWO_POW_128 + lo == x);
-            // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
-
-            // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-            // Safety: we assert that the absolute value has less than 128 bits
-            let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
-
-            let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (-lo);
-
-            abs_lo.assert_max_bit_size::<128>();
-            // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-            let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
-            // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO
-            let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1)
-                + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
-            // is lo is positive, we need to check the hi is less than phi with the borrow flag subtracted
-            // if lo is negative, we have to check that hi * 2^128 < phi * 2^128 + abs_lo + plo
-            // to do this we first make a flag to check that abs_lo + plo is larger than 2^128 or not
-            // if they are larger, we check that hi < phi + 1 and otherwise we check that hi < phi
-            // Safety: we assert the when the flag is positive we have less than 128 bits
-            let threshold_flag: bool = unsafe { get_borrow_flag(abs_lo + PLO, TWO_POW_128) };
-            (threshold_flag as Field * (abs_lo + PLO)).assert_max_bit_size::<128>();
-            let rhi = is_positive as Field * (PHI - hi - borrow)
-                + (1 - is_positive as Field) * (PHI - hi + threshold_flag as Field);
-            // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
-            rlo.assert_max_bit_size::<128>();
-            rhi.assert_max_bit_size::<128>();
+            assert_wnaf_decomposition_binds(hi, lo, x);
         }
         for i in 0..N {
             (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
@@ -190,4 +200,53 @@ unconstrained fn to_le_radix_16_works_with_odd_N() {
     let input = 0x0f00;
     let nibbles: [u8; 3] = to_le_radix_16(input);
     assert_eq(nibbles, [0x0, 0x0, 0xf]);
+}
+
+// ---------------------------------------------------------------------------
+// Regression tests for two bugs in the `N >= 64` branch of `From<Field>`.
+// These are expected to FAIL against the current implementation.
+// ---------------------------------------------------------------------------
+
+// Finding 1 (completeness): the canonicity range check rejects legitimate
+// scalars at the `lo == PLO` / `abs_lo + PLO == 2^128` boundary, because
+// `get_borrow_flag` compares with `<=` while `assert_max_bit_size::<128>` is a
+// strict `< 2^128`, so an intermediate that lands exactly on `2^128` is wrongly
+// rejected. `from(0)` and `from(PLO)` are unprovable today.
+
+#[test]
+fn regression_from_zero_is_provable() {
+    // Honest decomposition of 0 is hi = 1, lo = -2^128, so abs_lo = 2^128 and
+    // `abs_lo.assert_max_bit_size::<128>()` fails.
+    let a: Field = 0;
+    let s: ScalarField<64> = ScalarField::<64>::from(a);
+    assert_eq(ScalarField::<64>::into(s), a);
+}
+
+#[test]
+fn regression_from_low_limb_equal_plo_is_provable() {
+    // Any x with (x mod 2^128) == PLO drives abs_lo + PLO == 2^128 exactly, which
+    // fails `(threshold_flag * (abs_lo + PLO)).assert_max_bit_size::<128>()`.
+    let a: Field = PLO;
+    let s: ScalarField<64> = ScalarField::<64>::from(a);
+    assert_eq(ScalarField::<64>::into(s), a);
+}
+
+// Finding 2 (soundness): the canonicity check handles a negative `lo` but
+// implicitly assumes `hi >= 0`. Nothing forces the top 32 signed slices to sum
+// to a non-negative value, so a prover can pick `hi < 0`: then `hi` (as a field
+// element) is ~p, and `PHI - hi` wraps mod p to a small value that passes the
+// bit-size check, defeating the `hi <= PHI` comparison. The decomposition then
+// encodes a negative integer `V = x - p` that is accepted despite being
+// non-canonical, so `mul`/`msm` would compute `[x - p]*P` instead of `[x]*P`.
+//
+// A sound check must REJECT such a witness, so proving must fail -> should_fail.
+// This drives the real `assert_wnaf_decomposition_binds` used by `from` directly.
+#[test(should_fail)]
+fn regression_negative_hi_decomposition_is_rejected() {
+    // Malicious hint: hi = -1, lo = 1 => V = hi*2^128 + lo = -(2^128 - 1) = x - p,
+    // a non-canonical (negative) integer. Reachable from valid 4-bit slices.
+    let hi: Field = -1;
+    let lo: Field = 1;
+    let x: Field = hi * TWO_POW_128 + lo; // = p - (2^128 - 1)
+    assert_wnaf_decomposition_binds(hi, lo, x);
 }
