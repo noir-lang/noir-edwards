@@ -71,45 +71,37 @@ unconstrained fn to_le_radix_16<let N: u32>(value: Field) -> [u8; N] {
     result
 }
 
-/// Constrain a two-limb wNAF decomposition `(hi, lo)` (`lo` already skew-adjusted) to
-/// represent exactly the input scalar `x`, used by `From<Field>` when `N >= 64`.
-///
-/// Two properties are enforced:
-/// 1. Binding: the value represented by the prover-supplied slices, reduced modulo the
-///    field, equals `x`. Without this the slices are free to encode any scalar,
-///    decoupling the result from `x` (this is the analogue of the `assert(acc - skew == x)`
-///    check in the `N < 64` branch).
-/// 2. Canonicity: the integer represented by `(hi, lo)` is smaller than the field modulus
-///    `(PHI, PLO)`, ruling out non-canonical decompositions (e.g. `x + p`) that also reduce
-///    to `x`.
+/// Constrain the two-limb wNAF decomposition `(hi, lo)` (with `lo` already skew-adjusted)
+/// to represent the scalar `x`. This binds the decomposition to `x` and checks that the
+/// value it represents is smaller than the field modulus, so it cannot be a non-canonical
+/// alias such as `x + p`. Used by `From<Field>` when `N >= 64`.
 fn assert_wnaf_decomposition_binds(hi: Field, lo: Field, x: Field) {
     assert(hi * TWO_POW_128 + lo == x);
-    // Validate that the integer represented by (lo, hi) is smaller than the integer represented by (plo, phi)
 
-    // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-    // Safety: we assert that the absolute value has less than 128 bits
-    let is_positive: bool = unsafe { get_borrow_flag(lo, TWO_POW_128) };
+    // `lo` is a signed low limb in [-2^128, 2^128 - 1] (the low 32 slices decode to an odd
+    // value, then skew is subtracted). Normalize it into an unsigned limb in [0, 2^128) by
+    // adding 2^128 and borrowing one limb from `hi` when it is negative, leaving
+    // `hi * 2^128 + lo` unchanged.
+    // Safety: `is_negative` is constrained by the `lo_u` range check below; only the correct
+    // choice yields a `lo_u` smaller than 2^128.
+    let is_negative: bool = unsafe { !get_borrow_flag(lo, TWO_POW_128) };
+    let lo_u = lo + (is_negative as Field) * TWO_POW_128;
+    let hi_u = hi - (is_negative as Field);
 
-    let abs_lo = (is_positive as Field) * lo + (1 - is_positive as Field) * (-lo);
+    // Both limbs must be non-negative and fit in 128 bits. The `hi_u` check also rejects a
+    // negative `hi`, whose field value would otherwise be close to the modulus.
+    lo_u.assert_max_bit_size::<128>();
+    hi_u.assert_max_bit_size::<128>();
 
-    abs_lo.assert_max_bit_size::<128>();
-    // Safety: `borrow`'s value is constrained to be correct by below range constraints.
-    let borrow = unsafe { get_borrow_flag(PLO, abs_lo) as Field };
-    // we only need to check the rlo has 128 bits or less if lo is positive. if negative, the lo is already less than PLO
-    let rlo = is_positive as Field * (PLO - lo + borrow * TWO_POW_128 - 1)
-        + (1 - is_positive as Field) * (-lo); // -1 because we are checking a strict <, not <=
-    // is lo is positive, we need to check the hi is less than phi with the borrow flag subtracted
-    // if lo is negative, we have to check that hi * 2^128 < phi * 2^128 + abs_lo + plo
-    // to do this we first make a flag to check that abs_lo + plo is larger than 2^128 or not
-    // if they are larger, we check that hi < phi + 1 and otherwise we check that hi < phi
-    // Safety: we assert the when the flag is positive we have less than 128 bits
-    let threshold_flag: bool = unsafe { get_borrow_flag(abs_lo + PLO, TWO_POW_128) };
-    (threshold_flag as Field * (abs_lo + PLO)).assert_max_bit_size::<128>();
-    let rhi = is_positive as Field * (PHI - hi - borrow)
-        + (1 - is_positive as Field) * (PHI - hi + threshold_flag as Field);
-    // the rlo value would have 128 bits or less if positive and more if negative as the modulus is 254 bits
-    rlo.assert_max_bit_size::<128>();
-    rhi.assert_max_bit_size::<128>();
+    // Check (hi_u, lo_u) < (PHI, PLO) by subtracting limb by limb, borrowing from the high
+    // limb when the low limb underflows. `r_lo` and `r_hi` are the limbs of `p - 1 - V`,
+    // which are both valid 128-bit values only when `V < p`.
+    // Safety: `borrow` is constrained by the `r_lo`/`r_hi` range checks below.
+    let borrow: bool = unsafe { get_borrow_flag(PLO, lo_u) };
+    let r_lo = PLO - lo_u + (borrow as Field) * TWO_POW_128 - 1; // -1: strict `<`, not `<=`
+    let r_hi = PHI - hi_u - (borrow as Field);
+    r_lo.assert_max_bit_size::<128>();
+    r_hi.assert_max_bit_size::<128>();
 }
 
 impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
