@@ -191,17 +191,6 @@ unconstrained fn to_le_radix_16_works_with_odd_N() {
     assert_eq(nibbles, [0x0, 0x0, 0xf]);
 }
 
-// ---------------------------------------------------------------------------
-// Regression tests for two bugs in the `N >= 64` branch of `From<Field>`.
-// These are expected to FAIL against the current implementation.
-// ---------------------------------------------------------------------------
-
-// Finding 1 (completeness): the canonicity range check rejects legitimate
-// scalars at the `lo == PLO` / `abs_lo + PLO == 2^128` boundary, because
-// `get_borrow_flag` compares with `<=` while `assert_max_bit_size::<128>` is a
-// strict `< 2^128`, so an intermediate that lands exactly on `2^128` is wrongly
-// rejected. `from(0)` and `from(PLO)` are unprovable today.
-
 #[test]
 fn regression_from_zero_is_provable() {
     // Honest decomposition of 0 is hi = 1, lo = -2^128, so abs_lo = 2^128 and
@@ -220,16 +209,6 @@ fn regression_from_low_limb_equal_plo_is_provable() {
     assert_eq(ScalarField::<64>::into(s), a);
 }
 
-// Finding 2 (soundness): the canonicity check handles a negative `lo` but
-// implicitly assumes `hi >= 0`. Nothing forces the top 32 signed slices to sum
-// to a non-negative value, so a prover can pick `hi < 0`: then `hi` (as a field
-// element) is ~p, and `PHI - hi` wraps mod p to a small value that passes the
-// bit-size check, defeating the `hi <= PHI` comparison. The decomposition then
-// encodes a negative integer `V = x - p` that is accepted despite being
-// non-canonical, so `mul`/`msm` would compute `[x - p]*P` instead of `[x]*P`.
-//
-// A sound check must REJECT such a witness, so proving must fail -> should_fail.
-// This drives the real `assert_wnaf_decomposition_binds` used by `from` directly.
 #[test(should_fail)]
 fn regression_negative_hi_decomposition_is_rejected() {
     // Malicious hint: hi = -1, lo = 1 => V = hi*2^128 + lo = -(2^128 - 1) = x - p,
