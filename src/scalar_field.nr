@@ -113,10 +113,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
     fn from(x: Field) -> Self {
         // the field elements have 254 bits max, so we do not need to support N > 64
         static_assert(N <= 64, "N must be at most 64");
-        let mut result: Self = ScalarField { base4_slices: [0; N], skew: false };
         let (slices, skew): ([u8; N], bool) = unsafe { get_wnaf_slices(x) };
-        result.base4_slices = slices;
-        result.skew = skew;
         if (N < 64) {
             let mut acc: Field = (slices[0] as Field) * 2 - 15;
             for i in 1..N {
@@ -139,9 +136,9 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
             assert_wnaf_decomposition_binds(hi, lo, x);
         }
         for i in 0..N {
-            (result.base4_slices[i] as Field).assert_max_bit_size::<4>();
+            (slices[i] as Field).assert_max_bit_size::<4>();
         }
-        result
+        ScalarField { base4_slices: slices, skew }
     }
 }
 
