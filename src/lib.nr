@@ -211,6 +211,10 @@ where
     ///
     /// Cost: 2122 gates + cost of creating ScalarField (110 gates)
     fn mul<let NScalarSlices: u32>(self: Self, scalar: ScalarField<NScalarSlices>) -> Self {
+        // Reject off-curve inputs at the boundary. The doubling and addition degeneracies that can under-constrain
+        // an output are reachable only by off-curve points, so gating here makes scalar multiplication sound for
+        // every caller regardless of call-site discipline. Costs 3 gates.
+        self.assert_is_on_curve();
         // define a, d params locally to make code more readable (shouldn't affect performance)
         let a = Params::a();
         let d = Params::d();
@@ -343,26 +347,14 @@ impl<Params> Curve<Params> {
     /// This method exists because of a Noir bug where `Params` cannot be accessed by an internal function
     /// called from internal function. e.g. compiler error if `mul` impl tries to call `dbl` :(
     fn dbl_internal(self, a: Field, d: Field) -> Self {
-        let x1 = self.x;
-        let y1 = self.y;
-        let (x3, y3, _) = unsafe { __add_unconstrained(x1, x1, y1, y1, a, d) };
-        let x1x1a = x1 * x1 * a;
-        std::as_witness(x1x1a);
-        // t1 = a*x_1^2 + y_1^2
-        let t1 = y1 * y1 + x1x1a;
-        std::as_witness(t1);
-        // t3 = y_3 * (2 - a*x_1^2 + y_1^2) + 2*a*x_1^2
-        let t3 = y3 + y3 - t1 * y3 + x1x1a * 2;
-        // t3 == t1 implies y_3 * (2 - a*x_1^2 - y_1^2) + 2*a*x_1^2 == a*x_1^2 + y_1^2
-        // i.e. y_3 = y_1^2 - a*x_1^2 / (2 - a*x_1^2 - y_1^2)
-        assert(t3 == t1);
-        let t4 = x1 * y1;
-        std::as_witness(t4);
-        // x3 * t1 - t4 == t4 implies x_3 * (y_1^2 + a * x_1^2) = 2 * x_1 * y_1
-        // i.e. x_3 = 2 * x_1 * y_1 / (y_1^2 + a * x_1^2)
-        let t2 = x3 * t1 - t4;
-        assert(t2 == t4);
-        Self { x: x3, y: y3 }
+        // Double via the complete unified addition law so the lambda term is constrained. The standalone doubling
+        // discarded lambda (`let (x3, y3, _) = __add_unconstrained(...)`) and pinned x3/y3 only by
+        // `x3*t1 = 2*x1*y1` and `y3*(2 - t1) = y1^2 - a*x1^2` (t1 = y1^2 + a*x1^2), leaving x3 free at t1 = 0 and
+        // y3 free at t1 = 2. `add_internal` constrains lambda (`y1y2x1x2 == lambda`), so x3/y3 are fully
+        // determined. BabyJubJub has `a` a square and `d` a non-square, so the twisted-Edwards law is complete and
+        // doubling equals adding a point to itself (Bernstein-Birkner-Joye-Lange-Peters, "Twisted Edwards Curves",
+        // eprint 2008/013).
+        self.add_internal(self, a, d)
     }
 
     /// Compute a 4-bit lookup table of point multiples for the Straus windowed scalar multiplication algorithm.
