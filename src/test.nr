@@ -1,7 +1,7 @@
 use crate::bjj::{BabyJubJub, BabyJubJubParams};
 use crate::Curve;
 use crate::CurveTrait;
-use crate::scalar_field::{PHI, PLO, ScalarField, TWO_POW_128};
+use crate::scalar_field::ScalarField;
 
 pub global TWO_POW_252: Field = 0x1000000000000000000000000000000000000000000000000000000000000000;
 global BASE8: [Field; 2] = [
@@ -157,8 +157,43 @@ fn test_scalar_field_regression() {
 }
 
 #[test]
-fn test_globals() {
-    PLO.assert_max_bit_size::<128>();
-    PHI.assert_max_bit_size::<128>();
-    assert(PLO + PHI * TWO_POW_128 == 0);
+fn test_scalar_field_64_boundaries() {
+    let values: [Field; 6] = [
+        0,
+        1,
+        0xffffffffffffffffffffffffffffffff,
+        0x100000000000000000000000000000000,
+        TWO_POW_252,
+        -1,
+    ];
+    for x in values {
+        let scalar_field: ScalarField<64> = ScalarField::<64>::from(x);
+        assert(ScalarField::into(scalar_field) == x);
+    }
+}
+
+#[test]
+fn test_scalar_mul_64_zero() {
+    let bjj_point = BabyJubJub::new(BASE8[0], BASE8[1]);
+    let scalar_f: ScalarField<64> = ScalarField::from(0);
+    assert(bjj_point.mul(scalar_f).is_zero());
+}
+
+#[test]
+// `into()` reconstructs the windows' value mod p, so it cannot tell an integer
+// alias from the right scalar. Check `mul` at group level instead: compare it
+// against a bitwise double-and-add reference at the boundary scalars.
+fn test_full_scalar_mul_matches_bitwise() {
+    let point = BabyJubJub::new(BASE8[0], BASE8[1]);
+    let values: [Field; 5] =
+        [0, 1, 0xffffffffffffffffffffffffffffffff, 0x100000000000000000000000000000000, -1];
+    for x in values {
+        let scalar: ScalarField<64> = ScalarField::from(x);
+        let mut expected = BabyJubJub::zero();
+        for bit in x.to_be_bits::<254>() {
+            expected = expected.dbl();
+            expected = if bit { expected + point } else { expected };
+        }
+        assert(point.mul(scalar) == expected);
+    }
 }
