@@ -140,9 +140,7 @@ impl<let N: u32> std::convert::From<Field> for ScalarField<N> {
 
 impl<let N: u32> std::convert::Into<Field> for ScalarField<N> {
 
-    /// Construct from tuple of field elements
-    ///
-    /// Use this method instead of `new` if you know x/y is on the curve
+    /// Reconstruct the field element represented by the slices and skew
     fn into(self: Self) -> Field {
         let mut acc: Field = 0;
         for i in 0..N {
