@@ -162,3 +162,34 @@ fn test_globals() {
     PHI.assert_max_bit_size::<128>();
     assert(PLO + PHI * TWO_POW_128 == 0);
 }
+
+#[test(should_fail_with = "Point is not on the curve")]
+fn test_new_rejects_point_not_on_curve() {
+    let _ = BabyJubJub::new(BASE8[0], BASE8[1] + 1);
+}
+
+#[test(should_fail_with = "Point is not on the curve")]
+fn test_assert_is_on_curve_rejects_point_not_on_curve() {
+    let point: BabyJubJub = BabyJubJub { x: 0, y: 0 };
+    point.assert_is_on_curve();
+}
+
+#[test]
+fn test_assert_equal() {
+    let point: BabyJubJub = BabyJubJub { x: BASE8[0], y: BASE8[1] };
+    point.dbl().assert_equal(point + point);
+}
+
+#[test(should_fail_with = "Points are not equal")]
+fn test_assert_equal_rejects_different_x() {
+    // `point` and `-point` share the y coordinate and differ in x.
+    let point: BabyJubJub = BabyJubJub { x: BASE8[0], y: BASE8[1] };
+    point.assert_equal(-point);
+}
+
+#[test(should_fail_with = "Points are not equal")]
+fn test_assert_equal_rejects_different_y() {
+    // `(0, 1)` and `(0, -1)` share the x coordinate and differ in y.
+    let point: BabyJubJub = BabyJubJub { x: 0, y: -1 };
+    point.assert_equal(BabyJubJub::zero());
+}
