@@ -162,7 +162,7 @@ where
         std::as_witness(t1);
         let t2 = Params::a() * t0 + t1;
         let t3 = 1 + Params::d() * t0 * t1;
-        assert(t2 == t3);
+        assert(t2 == t3, "Point is not on the curve");
     }
 
     /// Constrain two points to equal each other
@@ -171,8 +171,8 @@ where
     ///
     /// Cost: 0-2 gates (can do these asserts with just copy constraints)
     fn assert_equal(self, other: Self) {
-        assert(self.x == other.x);
-        assert(self.y == other.y);
+        assert(self.x == other.x, "Points are not equal");
+        assert(self.y == other.y, "Points are not equal");
     }
 
     /// Return a bool that describes whether the point is on the curve
